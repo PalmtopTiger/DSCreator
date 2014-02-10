@@ -10,6 +10,36 @@ const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
 const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
 
+typedef QPair<QString, uint> CodePair;
+
+class CSVLine
+{
+public:
+    CodePair code;
+    uint time;
+    QString style;
+    QString text;
+
+    CSVLine(const CodePair& code,
+            const uint time,
+            const QString& style,
+            const QString& text) :
+        code(code),
+        time(time),
+        style(style),
+        text(text)
+    {}
+
+    QString join(const QString& separator = ";") const
+    {
+        return ( QStringList()
+                 << QString("%1-%2").arg(code.first).arg(code.second)
+                 << Script::Line::TimeToStr(time, Script::SCR_ASS)
+                 << style
+                 << QString("\"%1\"").arg( QString(text).replace(QChar('"'), "\"\"") ) ).join(separator);
+    }
+};
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -94,31 +124,41 @@ void MainWindow::saveFile(const QString &fileName)
         return;
     }
 
-    QTextStream out(&fout);
-    out.setCodec( QTextCodec::codecForName("UTF-8") );
-    out.setGenerateByteOrderMark(true);
-
-    if (ui->chkHeader->isChecked()) out << QString("Номер;Время;Стиль;Текст\n");
-
+    QList<CSVLine> csv;
     const QString prefix = ui->edPrefix->text();
-    QString text;
     uint pos = 1;
     foreach (const Script::Line::Event* event, this->script.events.content)
     {
         if (this->checkedStyles.isEmpty() || this->checkedStyles.contains(event->style, Qt::CaseInsensitive))
         {
-            text = event->text;
-            //! @todo: format
-            out << QString("%1-%2;%3;%4;\"%5\"\n")
-                   .arg(prefix)
-                   .arg(pos) // .arg(pos, 3, 10, QChar('0'))
-                   .arg(Script::Line::TimeToStr(event->start, Script::SCR_ASS))
-                   .arg(event->style)
-                   .arg(text.replace(QRegExp("\\\\n", Qt::CaseInsensitive), " ").replace(QChar('"'), "\"\""));
+            csv.append( CSVLine( CodePair(prefix, pos),
+                                 event->start,
+                                 event->style.trimmed(),
+                                 event->text.trimmed().replace(QRegExp("\\\\n", Qt::CaseInsensitive), " ").replace(QRegExp("\\{[^\\}]*\\}", Qt::CaseInsensitive), QString::null) ) );
         }
         ++pos;
     }
 
+    // Определение единых фраз
+    for (int i = csv.length() - 1; i >= 0; --i)
+    {
+        if (i > 0)
+        {
+            const CSVLine& prev = csv.at(i - 1);
+            const CSVLine& cur = csv.at(i);
+            if ( cur.style == prev.style && cur.text.contains(QRegExp("^\\W*[a-zа-яё]")) ) // prev.text.contains(QRegExp("[.!?]$"))
+            {
+                csv[i - 1].text = prev.text + " " + cur.text;
+                csv.removeAt(i);
+            }
+        }
+    }
+
+    QTextStream out(&fout);
+    out.setCodec( QTextCodec::codecForName("UTF-8") );
+    out.setGenerateByteOrderMark(true);
+    if (ui->chkHeader->isChecked()) out << "Номер;Время;Стиль;Текст\n";
+    foreach (const CSVLine& line, csv) out << line.join() << "\n";
     fout.close();
 }
 
