@@ -157,7 +157,7 @@ void MainWindow::saveFile(const QString &fileName)
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
     out.setGenerateByteOrderMark(true);
-    if (ui->chkHeader->isChecked()) out << "Номер;Время;Стиль;Текст\n";
+    if (ui->chkHeader->isChecked()) out << QString("Номер;Время;Стиль;Текст\n");
     foreach (const CSVLine& line, csv) out << line.join() << "\n";
     fout.close();
 }
