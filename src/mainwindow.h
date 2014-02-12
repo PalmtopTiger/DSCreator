@@ -30,6 +30,8 @@ private:
     Script::Script script;
     QStringList checkedStyles;
 
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
     void openFile(const QString &fileName);
     void saveFile(const QString &fileName);
 };

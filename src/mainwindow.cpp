@@ -1,10 +1,14 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QDesktopWidget>
 #include <QTextCodec>
+#include <QDesktopWidget>
+#include <QDragEnterEvent>
 #include <QMessageBox>
 #include <QSettings>
 #include <QFileDialog>
+#include <QUrl>
+
+QString UrlToPath(const QUrl &url);
 
 const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
@@ -53,6 +57,83 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+
+//
+// Слоты
+//
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls()) event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+    {
+        QString path = UrlToPath(event->mimeData()->urls().first());
+        if (!path.isEmpty()) {
+            this->openFile(path);
+            event->acceptProposedAction();
+        }
+    }
+}
+
+void MainWindow::on_btOpen_clicked()
+{
+    QSettings settings;
+    const QString fileName = QFileDialog::getOpenFileName(this,
+                                                          "Выберите файл",
+                                                          settings.value(DEFAULT_DIR_KEY).toString(),
+                                                          FILETYPES_FILTER);
+
+    if (fileName.isEmpty()) return;
+
+    this->fileInfo.setFile(fileName);
+    settings.setValue(DEFAULT_DIR_KEY, this->fileInfo.absolutePath());
+
+    this->openFile(this->fileInfo.fileName());
+}
+
+void MainWindow::on_btSave_clicked()
+{
+    QString templateName = this->fileInfo.path() + QDir::separator() + this->fileInfo.baseName();
+    if (!this->checkedStyles.isEmpty()) templateName.append(" (" + this->checkedStyles.join(",") + ')');
+    templateName.append(".csv");
+
+    const QString fileName = QFileDialog::getSaveFileName(this,
+                                                          "Выберите файл",
+                                                          QDir(templateName).path(),
+                                                          "CSV (*.csv)");
+
+    if (fileName.isEmpty()) return;
+
+    this->saveFile(fileName);
+}
+
+void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
+{
+    Q_UNUSED(item);
+
+    this->checkedStyles.clear();
+    for (int i = 0; i < ui->lstStyles->count(); ++i)
+    {
+        const QListWidgetItem* const item = ui->lstStyles->item(i);
+        if (Qt::Checked == item->checkState()) this->checkedStyles.append(item->text());
+    }
+}
+
+
+//
+// Функции
+//
+QString UrlToPath(const QUrl &url)
+{
+    QString path = url.toLocalFile();
+    if (!path.isEmpty() && FILETYPES.contains(QFileInfo(path).suffix(), Qt::CaseInsensitive)) return path;
+
+    return QString::null;
 }
 
 void MainWindow::openFile(const QString &fileName)
@@ -157,54 +238,7 @@ void MainWindow::saveFile(const QString &fileName)
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
     out.setGenerateByteOrderMark(true);
-    if (ui->chkHeader->isChecked()) out << QString("Номер;Время;Стиль;Текст\n");
+    if (ui->chkHeader->isChecked()) out << QString("Код;Время;Стиль;Текст\n");
     foreach (const CSVLine& line, csv) out << line.join() << "\n";
     fout.close();
-}
-
-//
-// Слоты
-//
-void MainWindow::on_btOpen_clicked()
-{
-    QSettings settings;
-    const QString fileName = QFileDialog::getOpenFileName(this,
-                                                          "Выберите файл",
-                                                          settings.value(DEFAULT_DIR_KEY).toString(),
-                                                          FILETYPES_FILTER);
-
-    if (fileName.isEmpty()) return;
-
-    this->fileInfo.setFile(fileName);
-    settings.setValue(DEFAULT_DIR_KEY, this->fileInfo.absolutePath());
-
-    this->openFile(this->fileInfo.fileName());
-}
-
-void MainWindow::on_btSave_clicked()
-{
-    QString templateName = this->fileInfo.path() + QDir::separator() + this->fileInfo.baseName();
-    if (!this->checkedStyles.isEmpty()) templateName.append(" (" + this->checkedStyles.join(",") + ')');
-    templateName.append(".csv");
-
-    const QString fileName = QFileDialog::getSaveFileName(this,
-                                                          "Выберите файл",
-                                                          QDir(templateName).path(),
-                                                          "CSV (*.csv)");
-
-    if (fileName.isEmpty()) return;
-
-    this->saveFile(fileName);
-}
-
-void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
-{
-    Q_UNUSED(item);
-
-    this->checkedStyles.clear();
-    for (int i = 0; i < ui->lstStyles->count(); ++i)
-    {
-        const QListWidgetItem* const item = ui->lstStyles->item(i);
-        if (Qt::Checked == item->checkState()) this->checkedStyles.append(item->text());
-    }
 }
