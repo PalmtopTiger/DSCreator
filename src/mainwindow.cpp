@@ -89,11 +89,9 @@ void MainWindow::on_btOpen_clicked()
                                                           FILETYPES_FILTER);
 
     if (fileName.isEmpty()) return;
+    settings.setValue(DEFAULT_DIR_KEY, fileName);
 
-    this->fileInfo.setFile(fileName);
-    settings.setValue(DEFAULT_DIR_KEY, this->fileInfo.absolutePath());
-
-    this->openFile(this->fileInfo.fileName());
+    this->openFile(fileName);
 }
 
 void MainWindow::on_btSave_clicked()
@@ -138,6 +136,8 @@ QString UrlToPath(const QUrl &url)
 
 void MainWindow::openFile(const QString &fileName)
 {
+    this->fileInfo.setFile(fileName);
+
     // Очистка
     ui->btSave->setEnabled(false);
     ui->lstStyles->clear();
