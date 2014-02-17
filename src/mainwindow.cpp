@@ -63,7 +63,7 @@ void MainWindow::on_btOpenSubtitles_clicked()
                                                           FILETYPES_FILTER);
 
     if (fileName.isEmpty()) return;
-    settings.setValue(DEFAULT_DIR_KEY, fileName);
+    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
 
     this->openSubtitles(fileName);
 }
@@ -77,7 +77,7 @@ void MainWindow::on_btOpenCSV_clicked()
                                                           "CSV (*.csv)");
 
     if (fileName.isEmpty()) return;
-    settings.setValue(DEFAULT_DIR_KEY, fileName);
+    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
 
     this->openCSV(fileName);
 }
@@ -129,6 +129,25 @@ void MainWindow::openSubtitles(const QString &fileName)
     ui->btSaveCSV->setEnabled(false);
     this->fileInfo.setFile(fileName);
     this->data.clear();
+
+    // Определение номера эпизода
+    const QRegExp episodeNumber("S\\d+E\\d+", Qt::CaseInsensitive);
+    if (episodeNumber.indexIn(this->fileInfo.baseName()) >= 0)
+    {
+        QStringList parts;
+        if (!ui->edPrefix->text().isEmpty())
+        {
+            QString temp = ui->edPrefix->text();
+            temp.remove(QRegExp("_?S\\d+E\\d+$", Qt::CaseInsensitive));
+            if (!temp.isEmpty()) parts.append(temp);
+        }
+        parts.append(episodeNumber.cap(0).toUpper());
+        ui->edPrefix->setText(parts.join("_"));
+    }
+    else if (ui->edPrefix->text().isEmpty())
+    {
+        QMessageBox::warning(this, "Предупреждение", "Возможно, вы забыли ввести префикс кода.");
+    }
 
     // Чтение файла
     QFile fin(fileName);
