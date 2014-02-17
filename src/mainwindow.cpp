@@ -198,16 +198,10 @@ void MainWindow::openFile(const QString &fileName)
 
 void MainWindow::saveFile(const QString &fileName)
 {
-    QFile fout(fileName);
-    if ( !fout.open(QFile::WriteOnly | QFile::Text) )
-    {
-        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
-        return;
-    }
-
     QList<CSVLine> csv;
     const QString prefix = ui->edPrefix->text();
     uint pos = 1;
+    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
     foreach (const Script::Line::Event* event, this->script.events.content)
     {
         if (this->checkedStyles.isEmpty() || this->checkedStyles.contains(event->style, Qt::CaseInsensitive))
@@ -215,24 +209,32 @@ void MainWindow::saveFile(const QString &fileName)
             csv.append( CSVLine( CodePair(prefix, pos),
                                  event->start,
                                  event->style.trimmed(),
-                                 event->text.trimmed().replace(QRegExp("\\\\n", Qt::CaseInsensitive), " ").replace(QRegExp("\\{[^\\}]*\\}", Qt::CaseInsensitive), QString::null) ) );
+                                 event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null) ) );
         }
         ++pos;
     }
 
     // Определение единых фраз
+    const QRegExp phraseNotBegin("^\\W*[a-zа-яё]"), phraseNotEnd("[^.!?]$");
     for (int i = csv.length() - 1; i >= 0; --i)
     {
         if (i > 0)
         {
             const CSVLine& prev = csv.at(i - 1);
             const CSVLine& cur = csv.at(i);
-            if ( cur.style == prev.style && cur.text.contains(QRegExp("^\\W*[a-zа-яё]")) ) // prev.text.contains(QRegExp("[.!?]$"))
+            if ( cur.style == prev.style && ( cur.text.contains(phraseNotBegin) || prev.text.contains(phraseNotEnd) ) )
             {
                 csv[i - 1].text = prev.text + " " + cur.text;
                 csv.removeAt(i);
             }
         }
+    }
+
+    QFile fout(fileName);
+    if ( !fout.open(QFile::WriteOnly | QFile::Text) )
+    {
+        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
+        return;
     }
 
     QTextStream out(&fout);
