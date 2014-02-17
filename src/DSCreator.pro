@@ -14,9 +14,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    script.cpp
+    script.cpp \
+    csvreader.cpp
 
 HEADERS  += mainwindow.h \
-    script.h
+    script.h \
+    csvreader.h
 
 FORMS    += mainwindow.ui

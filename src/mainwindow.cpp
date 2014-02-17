@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "csvreader.h"
+#include "script.h"
 #include <QTextCodec>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
@@ -13,36 +15,6 @@ QString UrlToPath(const QUrl &url);
 const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
 const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
-
-typedef QPair<QString, uint> CodePair;
-
-class CSVLine
-{
-public:
-    CodePair code;
-    uint time;
-    QString style;
-    QString text;
-
-    CSVLine(const CodePair& code,
-            const uint time,
-            const QString& style,
-            const QString& text) :
-        code(code),
-        time(time),
-        style(style),
-        text(text)
-    {}
-
-    QString join(const QString& separator = ";") const
-    {
-        return ( QStringList()
-                 << QString("%1-%2").arg(code.first).arg(code.second)
-                 << Script::Line::TimeToStr(time, Script::SCR_ASS)
-                 << style
-                 << QString("\"%1\"").arg( QString(text).replace(QChar('"'), "\"\"") ) ).join(separator);
-    }
-};
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -70,17 +42,19 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::dropEvent(QDropEvent *event)
 {
+    //! @todo: check extension
     if (event->mimeData()->hasUrls())
     {
         QString path = UrlToPath(event->mimeData()->urls().first());
         if (!path.isEmpty()) {
-            this->openFile(path);
+            this->openSubtitles(path);
             event->acceptProposedAction();
         }
     }
 }
 
-void MainWindow::on_btOpen_clicked()
+//! @todo: merge
+void MainWindow::on_btOpenSubtitles_clicked()
 {
     QSettings settings;
     const QString fileName = QFileDialog::getOpenFileName(this,
@@ -91,10 +65,24 @@ void MainWindow::on_btOpen_clicked()
     if (fileName.isEmpty()) return;
     settings.setValue(DEFAULT_DIR_KEY, fileName);
 
-    this->openFile(fileName);
+    this->openSubtitles(fileName);
 }
 
-void MainWindow::on_btSave_clicked()
+void MainWindow::on_btOpenCSV_clicked()
+{
+    QSettings settings;
+    const QString fileName = QFileDialog::getOpenFileName(this,
+                                                          "Выберите файл",
+                                                          settings.value(DEFAULT_DIR_KEY).toString(),
+                                                          "CSV (*.csv)");
+
+    if (fileName.isEmpty()) return;
+    settings.setValue(DEFAULT_DIR_KEY, fileName);
+
+    this->openCSV(fileName);
+}
+
+void MainWindow::on_btSaveCSV_clicked()
 {
     QString templateName = this->fileInfo.path() + QDir::separator() + this->fileInfo.baseName();
     if (!this->checkedStyles.isEmpty()) templateName.append(" (" + this->checkedStyles.join(",") + ')');
@@ -107,7 +95,7 @@ void MainWindow::on_btSave_clicked()
 
     if (fileName.isEmpty()) return;
 
-    this->saveFile(fileName);
+    this->saveCSV(fileName);
 }
 
 void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
@@ -134,15 +122,15 @@ QString UrlToPath(const QUrl &url)
     return QString::null;
 }
 
-void MainWindow::openFile(const QString &fileName)
+//! @todo: merge
+void MainWindow::openSubtitles(const QString &fileName)
 {
-    this->fileInfo.setFile(fileName);
-
     // Очистка
-    ui->btSave->setEnabled(false);
-    ui->lstStyles->clear();
-    this->script.clear();
+    ui->btSaveCSV->setEnabled(false);
+    this->fileInfo.setFile(fileName);
+    this->data.clear();
 
+    // Чтение файла
     QFile fin(fileName);
     if ( !fin.open(QFile::ReadOnly | QFile::Text) )
     {
@@ -150,12 +138,13 @@ void MainWindow::openFile(const QString &fileName)
         return;
     }
 
+    Script::Script script;
     QTextStream in(&fin);
     switch (Script::DetectFormat(in))
     {
     case Script::SCR_SSA:
     case Script::SCR_ASS:
-        if ( !Script::ParseSSA(in, this->script) )
+        if ( !Script::ParseSSA(in, script) )
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SSA/ASS");
             fin.close();
@@ -164,7 +153,7 @@ void MainWindow::openFile(const QString &fileName)
         break;
 
     case Script::SCR_SRT:
-        if ( !Script::ParseSRT(in, this->script) )
+        if ( !Script::ParseSRT(in, script) )
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SRT");
             fin.close();
@@ -179,43 +168,25 @@ void MainWindow::openFile(const QString &fileName)
     }
     fin.close();
 
-    // Заполнение
-    QStringList names;
-    foreach (const Script::Line::Style* style, this->script.styles.content)
-    {
-        names.append(style->styleName);
-    }
-    names.sort();
-    foreach (const QString& name, names)
-    {
-        QListWidgetItem* item = new QListWidgetItem(name, ui->lstStyles);
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
-        item->setCheckState(Qt::Unchecked);
-    }
-
-    ui->btSave->setEnabled(true);
-}
-
-void MainWindow::saveFile(const QString &fileName)
-{
-    QList<CSVLine> csv;
     const QString prefix = ui->edPrefix->text();
-    uint pos = 1;
     const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
-    foreach (const Script::Line::Event* event, this->script.events.content)
+    QList<QStandardItem*> row;
+    uint pos = 1;
+    foreach (const Script::Line::Event* event, script.events.content)
     {
-        if (this->checkedStyles.isEmpty() || this->checkedStyles.contains(event->style, Qt::CaseInsensitive))
-        {
-            csv.append( CSVLine( CodePair(prefix, pos),
-                                 event->start,
-                                 event->style.trimmed(),
-                                 event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null) ) );
-        }
+        row.append(new QStandardItem( QString("%1-%2").arg(prefix).arg(pos) ));
+        row.append(new QStandardItem( Script::Line::TimeToStr(event->start, Script::SCR_ASS) ));
+        row.append(new QStandardItem( event->style.trimmed() ));
+        row.append(new QStandardItem( event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null) ));
+
+        this->data.appendRow(row);
+        row.clear();
+
         ++pos;
     }
 
-    // Определение единых фраз
-    const QRegExp phraseNotBegin("^\\W*[a-zа-яё]"), phraseNotEnd("[^.!?]$");
+    //! @todo: Определение единых фраз
+    /*const QRegExp phraseNotBegin("^\\W*[a-zа-яё]"), phraseNotEnd("[^.?!…]$");
     for (int i = csv.length() - 1; i >= 0; --i)
     {
         if (i > 0)
@@ -228,8 +199,41 @@ void MainWindow::saveFile(const QString &fileName)
                 csv.removeAt(i);
             }
         }
+    }*/
+
+    this->updateStyles();
+
+    ui->btSaveCSV->setEnabled(true);
+}
+
+void MainWindow::openCSV(const QString &fileName)
+{
+    // Очистка
+    ui->btSaveCSV->setEnabled(false);
+    this->fileInfo.setFile(fileName);
+    this->data.clear();
+
+    // Чтение файла
+    CSVReader reader;
+    if (!reader.read(fileName, &this->data))
+    {
+        QMessageBox::critical(this, "Ошибка", "Ошибка открытия файла");
+        return;
     }
 
+    if (this->data.columnCount() != 4)
+    {
+        QMessageBox::critical(this, "Ошибка", "Файл не соответствует принятому формату");
+        return;
+    }
+
+    this->updateStyles();
+
+    ui->btSaveCSV->setEnabled(true);
+}
+
+void MainWindow::saveCSV(const QString &fileName)
+{
     QFile fout(fileName);
     if ( !fout.open(QFile::WriteOnly | QFile::Text) )
     {
@@ -239,8 +243,49 @@ void MainWindow::saveFile(const QString &fileName)
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
-    out.setGenerateByteOrderMark(true);
-    if (ui->chkHeader->isChecked()) out << QString("Код;Время;Стиль;Текст\n");
-    foreach (const CSVLine& line, csv) out << line.join() << "\n";
+//    out.setGenerateByteOrderMark(true);
+
+    if (ui->chkHeader->isChecked()) out << QString("Код,Время,Стиль,Текст\n");
+
+    const QChar separator = ',';
+    QString temp;
+    QStringList tempLine;
+    for (int row = 0; row < this->data.rowCount(); ++row)
+    {
+        if ( this->checkedStyles.isEmpty() || this->checkedStyles.contains(this->data.item(row, 2)->text(), Qt::CaseInsensitive) )
+        {
+            for (int col = 0; col < this->data.columnCount(); ++col)
+            {
+                temp = this->data.item(row, col)->text();
+                if ( temp.contains(separator) )
+                {
+                    temp = QString("\"%1\"").arg( temp.replace(QChar('"'), "\"\"") );
+                }
+                tempLine.append(temp);
+            }
+            out << tempLine.join(separator) << QString("\n");
+            tempLine.clear();
+        }
+    }
+
     fout.close();
+}
+
+void MainWindow::updateStyles()
+{
+    ui->lstStyles->clear();
+
+    QSet<QString> names;
+    for (int row = 0; row < this->data.rowCount(); ++row)
+    {
+        names.insert(this->data.item(row, 2)->text());
+    }
+    QStringList sortedNames = names.values();
+    sortedNames.sort();
+    foreach (const QString& name, sortedNames)
+    {
+        QListWidgetItem* item = new QListWidgetItem(name, ui->lstStyles);
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+        item->setCheckState(Qt::Unchecked);
+    }
 }
