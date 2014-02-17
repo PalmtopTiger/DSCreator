@@ -13,7 +13,7 @@
 QString UrlToPath(const QUrl &url);
 
 const QString DEFAULT_DIR_KEY = "DefaultDir";
-const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
+const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt" << "csv"; //! @todo: разделить?
 const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
 
 
@@ -42,19 +42,25 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::dropEvent(QDropEvent *event)
 {
-    //! @todo: check extension
     if (event->mimeData()->hasUrls())
     {
-        QString path = UrlToPath(event->mimeData()->urls().first());
-        if (!path.isEmpty()) {
-            this->openSubtitles(path);
+        const QString fileName = UrlToPath(event->mimeData()->urls().first());
+        if (!fileName.isEmpty()) {
+            const QFileInfo fileInfo(fileName);
+            if (fileInfo.suffix().toLower() == "csv")
+            {
+                this->openCSV(fileName);
+            }
+            else
+            {
+                this->openSubtitles(fileName);
+            }
             event->acceptProposedAction();
         }
     }
 }
 
-//! @todo: merge
-void MainWindow::on_btOpenSubtitles_clicked()
+void MainWindow::on_btOpen_clicked()
 {
     QSettings settings;
     const QString fileName = QFileDialog::getOpenFileName(this,
@@ -63,26 +69,21 @@ void MainWindow::on_btOpenSubtitles_clicked()
                                                           FILETYPES_FILTER);
 
     if (fileName.isEmpty()) return;
-    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
 
-    this->openSubtitles(fileName);
+    const QFileInfo fileInfo(fileName);
+    settings.setValue(DEFAULT_DIR_KEY, fileInfo.absoluteDir().path());
+
+    if (fileInfo.suffix().toLower() == "csv")
+    {
+        this->openCSV(fileName);
+    }
+    else
+    {
+        this->openSubtitles(fileName);
+    }
 }
 
-void MainWindow::on_btOpenCSV_clicked()
-{
-    QSettings settings;
-    const QString fileName = QFileDialog::getOpenFileName(this,
-                                                          "Выберите файл",
-                                                          settings.value(DEFAULT_DIR_KEY).toString(),
-                                                          "CSV (*.csv)");
-
-    if (fileName.isEmpty()) return;
-    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
-
-    this->openCSV(fileName);
-}
-
-void MainWindow::on_btSaveCSV_clicked()
+void MainWindow::on_btSave_clicked()
 {
     QString templateName = this->fileInfo.path() + QDir::separator() + this->fileInfo.baseName();
     if (!this->checkedStyles.isEmpty()) templateName.append(" (" + this->checkedStyles.join(",") + ')');
@@ -126,7 +127,7 @@ QString UrlToPath(const QUrl &url)
 void MainWindow::openSubtitles(const QString &fileName)
 {
     // Очистка
-    ui->btSaveCSV->setEnabled(false);
+    ui->btSave->setEnabled(false);
     this->fileInfo.setFile(fileName);
     this->data.clear();
 
@@ -222,13 +223,13 @@ void MainWindow::openSubtitles(const QString &fileName)
 
     this->updateStyles();
 
-    ui->btSaveCSV->setEnabled(true);
+    ui->btSave->setEnabled(true);
 }
 
 void MainWindow::openCSV(const QString &fileName)
 {
     // Очистка
-    ui->btSaveCSV->setEnabled(false);
+    ui->btSave->setEnabled(false);
     this->fileInfo.setFile(fileName);
     this->data.clear();
 
@@ -248,7 +249,7 @@ void MainWindow::openCSV(const QString &fileName)
 
     this->updateStyles();
 
-    ui->btSaveCSV->setEnabled(true);
+    ui->btSave->setEnabled(true);
 }
 
 void MainWindow::saveCSV(const QString &fileName)

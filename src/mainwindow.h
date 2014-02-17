@@ -20,9 +20,8 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_btOpenSubtitles_clicked();
-    void on_btOpenCSV_clicked();
-    void on_btSaveCSV_clicked();
+    void on_btOpen_clicked();
+    void on_btSave_clicked();
     void on_lstStyles_itemChanged(QListWidgetItem *item);
 
 private:
