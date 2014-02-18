@@ -45,17 +45,9 @@ void MainWindow::dropEvent(QDropEvent *event)
     if (event->mimeData()->hasUrls())
     {
         const QString fileName = UrlToPath(event->mimeData()->urls().first());
-        if (!fileName.isEmpty()) {
-            const QFileInfo fileInfo(fileName);
-            if (fileInfo.suffix().toLower() == "csv")
-            {
-                this->openCSV(fileName);
-            }
-            else
-            {
-                this->openSubtitles(fileName);
-            }
-            event->acceptProposedAction();
+        if (!fileName.isEmpty())
+        {
+            this->openFile(fileName);
         }
     }
 }
@@ -71,16 +63,9 @@ void MainWindow::on_btOpen_clicked()
     if (fileName.isEmpty()) return;
 
     const QFileInfo fileInfo(fileName);
-    settings.setValue(DEFAULT_DIR_KEY, fileInfo.absoluteDir().path());
+    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
 
-    if (fileInfo.suffix().toLower() == "csv")
-    {
-        this->openCSV(fileName);
-    }
-    else
-    {
-        this->openSubtitles(fileName);
-    }
+    this->openFile(fileName);
 }
 
 void MainWindow::on_btSave_clicked()
@@ -123,14 +108,28 @@ QString UrlToPath(const QUrl &url)
     return QString::null;
 }
 
-//! @todo: merge
-void MainWindow::openSubtitles(const QString &fileName)
+void MainWindow::openFile(const QString &fileName)
 {
     // Очистка
     ui->btSave->setEnabled(false);
     this->fileInfo.setFile(fileName);
     this->data.clear();
 
+    if (this->fileInfo.suffix().toLower() == "csv")
+    {
+        if (!this->openCSV(fileName)) return;
+    }
+    else
+    {
+        if (!this->openSubtitles(fileName)) return;
+    }
+
+    this->updateStyles();
+    ui->btSave->setEnabled(true);
+}
+
+bool MainWindow::openSubtitles(const QString &fileName)
+{
     // Определение номера эпизода
     const QRegExp episodeNumber("S\\d+E\\d+", Qt::CaseInsensitive);
     if (episodeNumber.indexIn(this->fileInfo.baseName()) >= 0)
@@ -155,7 +154,7 @@ void MainWindow::openSubtitles(const QString &fileName)
     if ( !fin.open(QFile::ReadOnly | QFile::Text) )
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка открытия файла");
-        return;
+        return false;
     }
 
     Script::Script script;
@@ -168,7 +167,7 @@ void MainWindow::openSubtitles(const QString &fileName)
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SSA/ASS");
             fin.close();
-            return;
+            return false;
         }
         break;
 
@@ -177,14 +176,14 @@ void MainWindow::openSubtitles(const QString &fileName)
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SRT");
             fin.close();
-            return;
+            return false;
         }
         break;
 
     default:
         QMessageBox::critical(this, "Ошибка", "Неизвестный формат файла");
         fin.close();
-        return;
+        return false;
     }
     fin.close();
 
@@ -221,35 +220,26 @@ void MainWindow::openSubtitles(const QString &fileName)
         }
     }*/
 
-    this->updateStyles();
-
-    ui->btSave->setEnabled(true);
+    return true;
 }
 
-void MainWindow::openCSV(const QString &fileName)
+bool MainWindow::openCSV(const QString &fileName)
 {
-    // Очистка
-    ui->btSave->setEnabled(false);
-    this->fileInfo.setFile(fileName);
-    this->data.clear();
-
     // Чтение файла
     CSVReader reader;
     if (!reader.read(fileName, &this->data))
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка открытия файла");
-        return;
+        return false;
     }
 
     if (this->data.columnCount() != 4)
     {
         QMessageBox::critical(this, "Ошибка", "Файл не соответствует принятому формату");
-        return;
+        return false;
     }
 
-    this->updateStyles();
-
-    ui->btSave->setEnabled(true);
+    return true;
 }
 
 void MainWindow::saveCSV(const QString &fileName)

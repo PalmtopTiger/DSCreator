@@ -54,7 +54,7 @@
       <item>
        <widget class="QPushButton" name="btOpen">
         <property name="text">
-         <string>Открыть субтитры</string>
+         <string>Открыть файл</string>
         </property>
        </widget>
       </item>

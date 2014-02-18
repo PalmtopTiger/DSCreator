@@ -32,8 +32,9 @@ private:
 
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-    void openSubtitles(const QString &fileName);
-    void openCSV(const QString &fileName);
+    void openFile(const QString &fileName);
+    bool openSubtitles(const QString &fileName);
+    bool openCSV(const QString &fileName);
     void saveCSV(const QString &fileName);
     void updateStyles();
 };
