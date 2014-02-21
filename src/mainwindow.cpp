@@ -204,21 +204,18 @@ bool MainWindow::openSubtitles(const QString &fileName)
         ++pos;
     }
 
-    //! @todo: Определение единых фраз
-    /*const QRegExp phraseNotBegin("^\\W*[a-zа-яё]"), phraseNotEnd("[^.?!…]$");
-    for (int i = csv.length() - 1; i >= 0; --i)
+    // Определение единых фраз
+    const QRegExp phraseNotBegin("^\\W*[a-zа-яё]"), phraseNotEnd("[^.?!…]$");
+    for (int row = this->data.rowCount() - 1; row > 0; --row)
     {
-        if (i > 0)
+        const int prev_row = row - 1;
+        if ( this->data.item(row, 2)->text() == this->data.item(prev_row, 2)->text() &&
+             ( this->data.item(row, 3)->text().contains(phraseNotBegin) || this->data.item(prev_row, 3)->text().contains(phraseNotEnd) ) )
         {
-            const CSVLine& prev = csv.at(i - 1);
-            const CSVLine& cur = csv.at(i);
-            if ( cur.style == prev.style && ( cur.text.contains(phraseNotBegin) || prev.text.contains(phraseNotEnd) ) )
-            {
-                csv[i - 1].text = prev.text + " " + cur.text;
-                csv.removeAt(i);
-            }
+            this->data.item(prev_row, 3)->setText( this->data.item(prev_row, 3)->text() + " " + this->data.item(row, 3)->text() );
+            this->data.removeRow(row);
         }
-    }*/
+    }
 
     return true;
 }
