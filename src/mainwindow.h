@@ -23,6 +23,7 @@ private slots:
     void on_btOpen_clicked();
     void on_btSave_clicked();
     void on_lstStyles_itemChanged(QListWidgetItem *item);
+    void on_btRenumber_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -37,6 +38,7 @@ private:
     bool openCSV(const QString &fileName);
     void saveCSV(const QString &fileName);
     void updateStyles();
+    void renumber();
 };
 
 #endif // MAINWINDOW_H

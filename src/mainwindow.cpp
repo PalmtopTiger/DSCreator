@@ -96,6 +96,16 @@ void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
     }
 }
 
+void MainWindow::on_btRenumber_clicked()
+{
+    if (ui->edPrefix->text().isEmpty())
+    {
+        QMessageBox::warning(this, "Предупреждение", "Возможно, вы забыли ввести префикс кода.");
+    }
+
+    this->renumber();
+}
+
 
 //
 // Функции
@@ -112,24 +122,10 @@ void MainWindow::openFile(const QString &fileName)
 {
     // Очистка
     ui->btSave->setEnabled(false);
+    ui->btRenumber->setEnabled(false);
     this->fileInfo.setFile(fileName);
     this->data.clear();
 
-    if (this->fileInfo.suffix().toLower() == "csv")
-    {
-        if (!this->openCSV(fileName)) return;
-    }
-    else
-    {
-        if (!this->openSubtitles(fileName)) return;
-    }
-
-    this->updateStyles();
-    ui->btSave->setEnabled(true);
-}
-
-bool MainWindow::openSubtitles(const QString &fileName)
-{
     // Определение номера эпизода
     const QRegExp episodeNumber("S\\d+E\\d+", Qt::CaseInsensitive);
     if (episodeNumber.indexIn(this->fileInfo.baseName()) >= 0)
@@ -144,11 +140,23 @@ bool MainWindow::openSubtitles(const QString &fileName)
         parts.append(episodeNumber.cap(0).toUpper());
         ui->edPrefix->setText(parts.join("_"));
     }
-    else if (ui->edPrefix->text().isEmpty())
+
+    if (this->fileInfo.suffix().toLower() == "csv")
     {
-        QMessageBox::warning(this, "Предупреждение", "Возможно, вы забыли ввести префикс кода.");
+        if (!this->openCSV(fileName)) return;
+    }
+    else
+    {
+        if (!this->openSubtitles(fileName)) return;
     }
 
+    this->updateStyles();
+    ui->btSave->setEnabled(true);
+    ui->btRenumber->setEnabled(true);
+}
+
+bool MainWindow::openSubtitles(const QString &fileName)
+{
     // Чтение файла
     QFile fin(fileName);
     if ( !fin.open(QFile::ReadOnly | QFile::Text) )
@@ -187,21 +195,17 @@ bool MainWindow::openSubtitles(const QString &fileName)
     }
     fin.close();
 
-    const QString prefix = ui->edPrefix->text();
     const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
     QList<QStandardItem*> row;
-    uint pos = 1;
     foreach (const Script::Line::Event* event, script.events.content)
     {
-        row.append(new QStandardItem( QString("%1-%2").arg(prefix).arg(pos) ));
+        row.append(new QStandardItem("-"));
         row.append(new QStandardItem( Script::Line::TimeToStr(event->start, Script::SCR_ASS) ));
         row.append(new QStandardItem( event->style.trimmed() ));
         row.append(new QStandardItem( event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null) ));
 
         this->data.appendRow(row);
         row.clear();
-
-        ++pos;
     }
 
     // Определение единых фраз
@@ -294,5 +298,15 @@ void MainWindow::updateStyles()
         QListWidgetItem* item = new QListWidgetItem(name, ui->lstStyles);
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
         item->setCheckState(Qt::Unchecked);
+    }
+}
+
+void MainWindow::renumber()
+{
+    const QString prefix = ui->edPrefix->text();
+    const QString format = "%1-%2";
+    for (int row = 0; row < this->data.rowCount(); ++row)
+    {
+        this->data.item(row, 0)->setText( format.arg(prefix).arg(row + 1) );
     }
 }

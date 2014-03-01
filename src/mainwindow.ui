@@ -59,6 +59,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="btRenumber">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Пронумеровать</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btSave">
         <property name="enabled">
          <bool>false</bool>
