@@ -17,6 +17,7 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "csvreader.h"
 #include <QFile>
 #include <QTextStream>
+#include <QTextCodec>
 
 
 CSVReader::CSVReader(const QChar &separator) :
@@ -40,6 +41,7 @@ bool CSVReader::read(const QString &fileName, QStandardItemModel * const model)
 
     QString temp;
     QTextStream in(&fin);
+    in.setCodec( QTextCodec::codecForName("UTF-8") );
     while (!in.atEnd())
     {
         foreach (const QChar &character, in.readLine())
