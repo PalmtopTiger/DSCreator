@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QSettings>
 #include <QFileDialog>
+#include <QMimeData>
 #include <QUrl>
 
 QString UrlToPath(const QUrl &url);

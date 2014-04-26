@@ -22,3 +22,7 @@ HEADERS  += mainwindow.h \
     csvreader.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += DSCreator.qrc
+
+RC_FILE = DSCreator.rc
