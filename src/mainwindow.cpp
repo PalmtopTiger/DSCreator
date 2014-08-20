@@ -15,7 +15,11 @@ QString UrlToPath(const QUrl &url);
 
 const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt" << "csv"; //! @todo: разделить?
+#if QT_VERSION >= 0x050000
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
+#else
+const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
+#endif
 
 
 MainWindow::MainWindow(QWidget *parent) :
