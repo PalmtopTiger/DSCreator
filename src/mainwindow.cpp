@@ -22,6 +22,7 @@ const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") 
 #else
 const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
 #endif
+const QChar CSV_SEPARATOR = ';';
 enum { COL_ID, COL_START, COL_END, COL_STYLE, COL_TEXT, COL_COUNT };
 
 
@@ -256,7 +257,7 @@ bool MainWindow::openSubtitles(const QString &fileName)
 bool MainWindow::openCSV(const QString &fileName)
 {
     // Чтение файла
-    CSVReader reader;
+    CSVReader reader(CSV_SEPARATOR);
     if (!reader.read(fileName, &this->data))
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка открытия файла");
@@ -283,11 +284,8 @@ void MainWindow::saveCSV(const QString &fileName)
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
-//    out.setGenerateByteOrderMark(true);
+    out.setGenerateByteOrderMark(true);
 
-//    if (ui->chkHeader->isChecked()) out << QString("Код,Начало,Конец,Стиль,Текст\n");
-
-    const QChar separator = ',';
     QString temp;
     QStringList tempLine;
     for (int row = 0; row < this->data.rowCount(); ++row)
@@ -297,13 +295,13 @@ void MainWindow::saveCSV(const QString &fileName)
             for (int col = 0; col < this->data.columnCount(); ++col)
             {
                 temp = this->data.item(row, col)->text();
-                if ( temp.contains(separator) )
+                if ( temp.contains(CSV_SEPARATOR) )
                 {
                     temp = QString("\"%1\"").arg( temp.replace(QChar('"'), "\"\"") );
                 }
                 tempLine.append(temp);
             }
-            out << tempLine.join(separator) << QString("\n");
+            out << tempLine.join(CSV_SEPARATOR) << QString("\n");
             tempLine.clear();
         }
     }
