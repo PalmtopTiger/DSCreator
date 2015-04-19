@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSettings>
 #include <QFileInfo>
 #include <QListWidgetItem>
 #include <QStandardItemModel>
@@ -27,6 +28,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    QSettings settings;
     QFileInfo fileInfo;
     QStandardItemModel data;
     QStringList checkedStyles;

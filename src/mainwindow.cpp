@@ -6,20 +6,23 @@
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
 #include <QMessageBox>
-#include <QSettings>
 #include <QFileDialog>
 #include <QMimeData>
 #include <QUrl>
 
 QString UrlToPath(const QUrl &url);
+QString TimeToPT(const uint time, const double fps);
 
 const QString DEFAULT_DIR_KEY = "DefaultDir";
+const QString PREFIX_KEY = "Prefix";
+const QString FPS_KEY = "FPS";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt" << "csv"; //! @todo: разделить?
 #if QT_VERSION >= 0x050000
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
 #else
 const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
 #endif
+enum { COL_ID, COL_START, COL_END, COL_STYLE, COL_TEXT, COL_COUNT };
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -28,11 +31,17 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->edPrefix->setText(this->settings.value(PREFIX_KEY, ui->edPrefix->text()).toString());
+    ui->edFPS->setValue(this->settings.value(FPS_KEY, ui->edFPS->value()).toDouble());
+
     this->move(QApplication::desktop()->screenGeometry().center() - this->rect().center());
 }
 
 MainWindow::~MainWindow()
 {
+    this->settings.setValue(PREFIX_KEY, ui->edPrefix->text());
+    this->settings.setValue(FPS_KEY, ui->edFPS->value());
+
     delete ui;
 }
 
@@ -59,16 +68,14 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_btOpen_clicked()
 {
-    QSettings settings;
     const QString fileName = QFileDialog::getOpenFileName(this,
                                                           "Выберите файл",
-                                                          settings.value(DEFAULT_DIR_KEY).toString(),
+                                                          this->settings.value(DEFAULT_DIR_KEY).toString(),
                                                           FILETYPES_FILTER);
 
     if (fileName.isEmpty()) return;
 
-    const QFileInfo fileInfo(fileName);
-    settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
+    this->settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
 
     this->openFile(fileName);
 }
@@ -121,6 +128,20 @@ QString UrlToPath(const QUrl &url)
     if (!path.isEmpty() && FILETYPES.contains(QFileInfo(path).suffix(), Qt::CaseInsensitive)) return path;
 
     return QString::null;
+}
+
+QString TimeToPT(const uint time, const double fps)
+{
+    uint hour = time / 3600000u,
+            min  = time % 3600000u / 60000u,
+            sec  = time % 60000u   / 1000u,
+            msec = time % 1000u;
+
+    return QString("%1:%2:%3:%4")
+            .arg(hour, 2, 10, QChar('0'))
+            .arg(min, 2, 10, QChar('0'))
+            .arg(sec, 2, 10, QChar('0'))
+            .arg(msec / fps, 2, 'f', 0, QChar('0'));
 }
 
 void MainWindow::openFile(const QString &fileName)
@@ -205,7 +226,8 @@ bool MainWindow::openSubtitles(const QString &fileName)
     foreach (const Script::Line::Event* event, script.events.content)
     {
         row.append(new QStandardItem("-"));
-        row.append(new QStandardItem( Script::Line::TimeToStr(event->start, Script::SCR_ASS) ));
+        row.append(new QStandardItem( TimeToPT(event->start, ui->edFPS->value()) ));
+        row.append(new QStandardItem( TimeToPT(event->end, ui->edFPS->value()) ));
         row.append(new QStandardItem( event->style.trimmed() ));
         row.append(new QStandardItem( event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null) ));
 
@@ -218,10 +240,12 @@ bool MainWindow::openSubtitles(const QString &fileName)
     for (int row = this->data.rowCount() - 1; row > 0; --row)
     {
         const int prev_row = row - 1;
-        if ( this->data.item(row, 2)->text() == this->data.item(prev_row, 2)->text() &&
-             ( this->data.item(row, 3)->text().contains(phraseNotBegin) || this->data.item(prev_row, 3)->text().contains(phraseNotEnd) ) )
+        // Если стиль совпадает и текст не оканчивается на точку и начинается с маленькой буквы
+        if ( this->data.item(row, COL_STYLE)->text() == this->data.item(prev_row, COL_STYLE)->text() &&
+             ( this->data.item(row, COL_TEXT)->text().contains(phraseNotBegin) || this->data.item(prev_row, COL_TEXT)->text().contains(phraseNotEnd) ) )
         {
-            this->data.item(prev_row, 3)->setText( this->data.item(prev_row, 3)->text() + " " + this->data.item(row, 3)->text() );
+            this->data.item(prev_row, COL_END)->setText( this->data.item(row, COL_END)->text() );
+            this->data.item(prev_row, COL_TEXT)->setText( this->data.item(prev_row, COL_TEXT)->text() + " " + this->data.item(row, COL_TEXT)->text() );
             this->data.removeRow(row);
         }
     }
@@ -239,7 +263,7 @@ bool MainWindow::openCSV(const QString &fileName)
         return false;
     }
 
-    if (this->data.columnCount() != 4)
+    if (this->data.columnCount() != COL_COUNT)
     {
         QMessageBox::critical(this, "Ошибка", "Файл не соответствует принятому формату");
         return false;
@@ -261,14 +285,14 @@ void MainWindow::saveCSV(const QString &fileName)
     out.setCodec( QTextCodec::codecForName("UTF-8") );
 //    out.setGenerateByteOrderMark(true);
 
-    if (ui->chkHeader->isChecked()) out << QString("Код,Время,Стиль,Текст\n");
+//    if (ui->chkHeader->isChecked()) out << QString("Код,Начало,Конец,Стиль,Текст\n");
 
     const QChar separator = ',';
     QString temp;
     QStringList tempLine;
     for (int row = 0; row < this->data.rowCount(); ++row)
     {
-        if ( this->checkedStyles.isEmpty() || this->checkedStyles.contains(this->data.item(row, 2)->text(), Qt::CaseInsensitive) )
+        if ( this->checkedStyles.isEmpty() || this->checkedStyles.contains(this->data.item(row, COL_STYLE)->text(), Qt::CaseInsensitive) )
         {
             for (int col = 0; col < this->data.columnCount(); ++col)
             {
@@ -294,7 +318,7 @@ void MainWindow::updateStyles()
     QSet<QString> names;
     for (int row = 0; row < this->data.rowCount(); ++row)
     {
-        names.insert(this->data.item(row, 2)->text());
+        names.insert(this->data.item(row, COL_STYLE)->text());
     }
     QStringList sortedNames = names.values();
     sortedNames.sort();
@@ -312,6 +336,6 @@ void MainWindow::renumber()
     const QString format = "%1-%2";
     for (int row = 0; row < this->data.rowCount(); ++row)
     {
-        this->data.item(row, 0)->setText( format.arg(prefix).arg(row + 1) );
+        this->data.item(row, COL_ID)->setText( format.arg(prefix).arg(row + 1) );
     }
 }

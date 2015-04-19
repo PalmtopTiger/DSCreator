@@ -76,10 +76,10 @@ void CSVReader::checkString(QString &temp, const QChar &character)
         // will possibly fail if there are 4 or more reapeating double quotes
         temp.replace("\"\"", "\"");
 
-        standardItemList.append(new QStandardItem(temp));
+        this->standardItemList.append(new QStandardItem(temp));
         if (character != this->separator)
         {
-            this->model->appendRow(standardItemList);
+            this->model->appendRow(this->standardItemList);
             this->standardItemList.clear();
         }
         temp.clear();
