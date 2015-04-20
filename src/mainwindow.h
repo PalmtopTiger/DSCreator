@@ -1,11 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "script.h"
 #include <QMainWindow>
 #include <QSettings>
 #include <QFileInfo>
 #include <QListWidgetItem>
-#include <QStandardItemModel>
 
 
 namespace Ui {
@@ -24,23 +24,19 @@ private slots:
     void on_btOpen_clicked();
     void on_btSave_clicked();
     void on_lstStyles_itemChanged(QListWidgetItem *item);
-    void on_btRenumber_clicked();
 
 private:
     Ui::MainWindow *ui;
-    QSettings settings;
-    QFileInfo fileInfo;
-    QStandardItemModel data;
-    QStringList checkedStyles;
+    QSettings _settings;
+    QFileInfo _fileInfo;
+    Script::Script _script;
+    QStringList _checkedStyles;
 
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-    void openFile(const QString &fileName);
-    bool openSubtitles(const QString &fileName);
-    bool openCSV(const QString &fileName);
+    void openSubtitles(const QString &fileName);
     void saveCSV(const QString &fileName);
     void updateStyles();
-    void renumber();
 };
 
 #endif // MAINWINDOW_H

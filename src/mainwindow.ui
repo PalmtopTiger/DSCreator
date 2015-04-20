@@ -49,9 +49,6 @@
       </item>
       <item row="1" column="1">
        <widget class="QDoubleSpinBox" name="edFPS">
-        <property name="toolTip">
-         <string>После изменения требуется заново открыть файл</string>
-        </property>
         <property name="decimals">
          <number>3</number>
         </property>
@@ -73,17 +70,7 @@
       <item>
        <widget class="QPushButton" name="btOpen">
         <property name="text">
-         <string>Открыть файл</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btRenumber">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Проставить коды</string>
+         <string>Открыть субтитры</string>
         </property>
        </widget>
       </item>
