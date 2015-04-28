@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QtMath>
 #include <QTextCodec>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
@@ -131,7 +132,7 @@ QString TimeToPT(const uint time, const double fps)
             .arg(hour, 2, 10, QChar('0'))
             .arg(min, 2, 10, QChar('0'))
             .arg(sec, 2, 10, QChar('0'))
-            .arg(msec * fps / 1000.0, 2, 'f', 0, QChar('0'));
+            .arg(qFloor(msec * fps / 1000.0), 2, 'f', 0, QChar('0'));
 }
 
 void MainWindow::openSubtitles(const QString &fileName)
