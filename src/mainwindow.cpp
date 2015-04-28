@@ -190,9 +190,16 @@ void MainWindow::saveCSV(const QString &fileName)
     const QString prefix = ui->edPrefix->text();
     QList<QStandardItem*> row;
     uint pos = 1;
+    QString id;
     foreach (const Script::Line::Event* event, _script.events.content)
     {
-        row.append(new QStandardItem( QString("%1-%2").arg(prefix).arg(pos) ));
+        id = QString::number(pos);
+        if (!prefix.isEmpty()) {
+            id.prepend('-');
+            id.prepend(prefix);
+        }
+
+        row.append(new QStandardItem( id ));
         row.append(new QStandardItem( TimeToPT(event->start, ui->edFPS->value()) ));
         row.append(new QStandardItem( TimeToPT(event->end, ui->edFPS->value()) ));
         row.append(new QStandardItem( event->style.trimmed() ));

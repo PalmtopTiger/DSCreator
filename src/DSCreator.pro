@@ -24,3 +24,5 @@ FORMS    += mainwindow.ui
 RESOURCES += DSCreator.qrc
 
 RC_FILE = DSCreator.rc
+
+ICON = main.icns
