@@ -76,7 +76,7 @@ void MainWindow::on_btOpen_clicked()
 
     if (fileName.isEmpty()) return;
 
-    _settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absoluteDir().path());
+    _settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absolutePath());
 
     this->openSubtitles(fileName);
 }
