@@ -38,7 +38,7 @@ private:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
     void updateStyles();
-    void openSubtitles(const QString &fileName);
+    void open(const QString &fileName);
     void save(const QString &fileName, Format format);
 };
 

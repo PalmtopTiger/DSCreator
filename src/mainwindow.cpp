@@ -55,7 +55,7 @@ void MainWindow::dropEvent(QDropEvent *event)
         const QString fileName = UrlToPath(event->mimeData()->urls().first());
         if (!fileName.isEmpty())
         {
-            this->openSubtitles(fileName);
+            this->open(fileName);
         }
     }
 }
@@ -71,7 +71,7 @@ void MainWindow::on_btOpenSubtitles_clicked()
 
     _settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absolutePath());
 
-    this->openSubtitles(fileName);
+    this->open(fileName);
 }
 
 void MainWindow::on_btSaveCSV_clicked()
@@ -145,7 +145,7 @@ void MainWindow::updateStyles()
     }
 }
 
-void MainWindow::openSubtitles(const QString &fileName)
+void MainWindow::open(const QString &fileName)
 {
     // Очистка
     ui->btSaveCSV->setEnabled(false);
