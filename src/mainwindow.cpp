@@ -190,23 +190,7 @@ void MainWindow::open(const QString &fileName)
     }
     fin.close();
 
-    _table.clear();
-
-    // Построение таблицы
-    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
-    Table::Row* row;
-    foreach (const Script::Line::Event* event, script.events.content)
-    {
-        row = new Table::Row;
-
-        row->start = event->start;
-        row->end   = event->end;
-        row->style = event->style.trimmed();
-        row->text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
-
-        _table.append(row);
-    }
-
+    _table = script;
     _table.mergeSiblings();
 
     this->updateStyles();

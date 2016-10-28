@@ -5,9 +5,24 @@
 
 namespace Table
 {
+Table::Table(const Script::Script& script)
+{
+    this->import(script);
+}
+
 Table::~Table()
 {
     qDeleteAll(_rows);
+}
+
+Table& Table::operator=(const Script::Script& script)
+{
+    if (!this->isEmpty())
+    {
+        this->clear();
+    }
+    this->import(script);
+    return *this;
 }
 
 void Table::clear()
@@ -24,6 +39,23 @@ bool Table::isEmpty() const
 void Table::append(Row* ptr)
 {
     _rows.append(ptr);
+}
+
+void Table::import(const Script::Script& script)
+{
+    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
+    Row* row;
+    foreach (const Script::Line::Event* event, script.events.content)
+    {
+        row = new Row;
+
+        row->start = event->start;
+        row->end   = event->end;
+        row->style = event->style.trimmed();
+        row->text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
+
+        this->append(row);
+    }
 }
 
 // Определение единых фраз

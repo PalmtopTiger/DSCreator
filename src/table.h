@@ -1,6 +1,7 @@
 #ifndef TABLE_H
 #define TABLE_H
 
+#include "script.h"
 #include <QList>
 #include <QString>
 
@@ -19,10 +20,14 @@ struct Row
 class Table
 {
 public:
+    Table() {};
+    Table(const Script::Script& script);
     ~Table();
+    Table& operator=(const Script::Script& script);
     void clear();
     bool isEmpty() const;
     void append(Row* ptr);
+    void import(const Script::Script& script);
     void mergeSiblings();
     QStringList styles() const;
     QString toCSV(const QStringList& styles, const double fps) const;
