@@ -39,7 +39,7 @@ private:
     void dropEvent(QDropEvent *event);
     void updateStyles();
     void open(const QString &fileName);
-    void save(const QString &fileName, Format format);
+    void save(const QString &fileName, const Format format);
 };
 
 #endif // MAINWINDOW_H

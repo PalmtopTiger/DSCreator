@@ -214,7 +214,7 @@ void MainWindow::open(const QString &fileName)
     ui->btSaveTSV->setEnabled(true);
 }
 
-void MainWindow::save(const QString &fileName, Format format)
+void MainWindow::save(const QString &fileName, const Format format)
 {
     QFile fout(fileName);
     if ( !fout.open(QFile::WriteOnly | QFile::Text) )
