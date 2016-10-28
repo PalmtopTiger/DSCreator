@@ -27,27 +27,13 @@
        <enum>QFormLayout::ExpandingFieldsGrow</enum>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="lbPrefix">
-        <property name="text">
-         <string>Префикс кода строки</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLineEdit" name="edPrefix">
-        <property name="text">
-         <string>Line</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
        <widget class="QLabel" name="lbFPS">
         <property name="text">
          <string>Кадров в секунде</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="0" column="1">
        <widget class="QDoubleSpinBox" name="edFPS">
         <property name="decimals">
          <number>3</number>
@@ -68,19 +54,29 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QPushButton" name="btOpen">
+       <widget class="QPushButton" name="btOpenSubtitles">
         <property name="text">
          <string>Открыть субтитры</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btSave">
+       <widget class="QPushButton" name="btSaveCSV">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
          <string>Сохранить CSV</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btSaveTSV">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Сохранить TSV</string>
         </property>
        </widget>
       </item>
