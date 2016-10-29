@@ -230,18 +230,17 @@ void MainWindow::save(const QString &fileName, const Format format)
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
+    out.setGenerateByteOrderMark(true);
 
     const double fps = ui->edFPS->value();
     const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
     switch (format)
     {
     case FMT_CSV:
-        out.setGenerateByteOrderMark(true);
         out << _table.toCSV(_checkedStyles, fps, timeStart);
         break;
 
     case FMT_TSV:
-        out.setGenerateByteOrderMark(true);
         out << _table.toTSV(_checkedStyles, fps, timeStart);
         break;
 
