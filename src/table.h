@@ -30,14 +30,15 @@ public:
     void import(const Script::Script& script);
     void mergeSiblings();
     QStringList styles() const;
-    QString toCSV(const QStringList& styles, const double fps) const;
-    QString toTSV(const QStringList& styles, const double fps) const;
+    QString toCSV(const QStringList& styles, const double fps, const int timeStart) const;
+    QString toTSV(const QStringList& styles, const double fps, const int timeStart) const;
+    void toPDF(const QString& fileName, const QStringList& styles, const double fps, const int timeStart) const;
 
 private:
     QList<Row*> _rows;
 
-    QString _timeToPT(const uint time, const double fps) const;
-    QString _generate(const QStringList& styles, const double fps, const QChar separator) const;
+    QString _timeToPT(const uint time, const double fps, const int timeStart) const;
+    QString _generate(const QStringList& styles, const double fps, const int timeStart, const QChar separator) const;
 };
 }
 

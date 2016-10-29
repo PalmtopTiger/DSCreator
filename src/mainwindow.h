@@ -26,6 +26,7 @@ private slots:
     void on_btOpenSubtitles_clicked();
     void on_btSaveCSV_clicked();
     void on_btSaveTSV_clicked();
+    void on_btSavePDF_clicked();
     void on_lstStyles_itemChanged(QListWidgetItem *item);
 
 private:

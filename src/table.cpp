@@ -2,6 +2,9 @@
 #include <QtMath>
 #include <QSet>
 #include <QMap>
+#include <QTextDocument>
+#include <QTextCursor>
+#include <QPrinter>
 
 namespace Table
 {
@@ -91,21 +94,22 @@ QStringList Table::styles() const
     return styles.values();
 }
 
-QString Table::_timeToPT(const uint time, const double fps) const
+QString Table::_timeToPT(const uint time, const double fps, const int timeStart) const
 {
-    uint hour = time / 3600000u,
-         min  = time % 3600000u / 60000u,
-         sec  = time % 60000u   / 1000u,
-         msec = time % 1000u;
+    const uint newTime = time + timeStart;
+    uint hour = newTime / 3600000u,
+         min  = newTime % 3600000u / 60000u,
+         sec  = newTime % 60000u   / 1000u,
+         msec = newTime % 1000u;
 
     return QString("%1:%2:%3:%4")
             .arg(hour, 2, 10, QChar('0'))
-            .arg(min, 2, 10, QChar('0'))
-            .arg(sec, 2, 10, QChar('0'))
+            .arg(min,  2, 10, QChar('0'))
+            .arg(sec,  2, 10, QChar('0'))
             .arg(qFloor(msec * fps / 1000.0), 2, 10, QChar('0'));
 }
 
-QString Table::_generate(const QStringList& styles, const double fps, const QChar separator) const
+QString Table::_generate(const QStringList& styles, const double fps, const int timeStart, const QChar separator) const
 {
     QString result;
 
@@ -124,15 +128,15 @@ QString Table::_generate(const QStringList& styles, const double fps, const QCha
 
             if (separator == SEP_CSV)
             {
-                line.append( _timeToPT(row->start, fps) );
-                line.append( _timeToPT(row->end, fps) );
+                line.append( _timeToPT(row->start, fps, timeStart) );
+                line.append( _timeToPT(row->end, fps, timeStart) );
                 line.append( id );
                 line.append( row->text );
             }
             else if (separator == SEP_TSV)
             {
                 line.append( id );
-                line.append( _timeToPT(row->start, fps) );
+                line.append( _timeToPT(row->start, fps, timeStart) );
             }
 
             for (QStringList::iterator str = line.begin(); str != line.end(); ++str)
@@ -152,13 +156,50 @@ QString Table::_generate(const QStringList& styles, const double fps, const QCha
     return result;
 }
 
-QString Table::toCSV(const QStringList& styles, const double fps) const
+QString Table::toCSV(const QStringList& styles, const double fps, const int timeStart) const
 {
-    return _generate(styles, fps, SEP_CSV);
+    return _generate(styles, fps, timeStart, SEP_CSV);
 }
 
-QString Table::toTSV(const QStringList& styles, const double fps) const
+QString Table::toTSV(const QStringList& styles, const double fps, const int timeStart) const
 {
-    return _generate(styles, fps, SEP_TSV);
+    return _generate(styles, fps, timeStart, SEP_TSV);
+}
+
+void Table::toPDF(const QString& fileName, const QStringList& styles, const double fps, const int timeStart) const
+{
+    QTextDocument document;
+    document.setDefaultFont(QFont("Helvetica", 14));
+    QTextCursor cursor(&document);
+
+    const int width = QString::number(_rows.size()).size();
+    QMap<QString, uint> counters;
+    uint counter;
+    foreach (const Row* row, _rows)
+    {
+        if ( styles.isEmpty() || styles.contains(row->style, Qt::CaseInsensitive) )
+        {
+            counter = counters.value(row->style, 0) + 1;
+            counters[row->style] = counter;
+
+            cursor.insertHtml( QString("<b>%1%2</b> %3<br/>%4")
+                               .arg(row->style)
+                               .arg(counter, width, 10, QChar('0'))
+                               .arg(_timeToPT(row->start, fps, timeStart))
+                               .arg(row->text) );
+
+            if (row != _rows.last())
+            {
+                cursor.insertBlock();
+                cursor.insertBlock();
+            }
+        }
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setPaperSize(QPrinter::A4);
+    printer.setOutputFileName(fileName);
+    document.print(&printer);
 }
 }

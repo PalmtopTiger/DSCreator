@@ -49,6 +49,20 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QTimeEdit" name="edTimeStart">
+        <property name="displayFormat">
+         <string>H:mm:ss</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="lbTime">
+        <property name="text">
+         <string>Начало времён</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>
@@ -56,7 +70,7 @@
       <item>
        <widget class="QPushButton" name="btOpenSubtitles">
         <property name="text">
-         <string>Открыть субтитры</string>
+         <string>📂 Субтитры</string>
         </property>
        </widget>
       </item>
@@ -66,7 +80,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Сохранить CSV</string>
+         <string>💾 CSV</string>
         </property>
        </widget>
       </item>
@@ -76,7 +90,17 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Сохранить TSV</string>
+         <string>💾 TSV</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btSavePDF">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>💾 PDF</string>
         </property>
        </widget>
       </item>

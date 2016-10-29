@@ -13,6 +13,7 @@ QString UrlToPath(const QUrl &url);
 
 const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QString FPS_KEY = "FPS";
+const QString TIME_START_KEY = "TimeStart";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
 #if QT_VERSION >= 0x050000
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
@@ -28,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     ui->edFPS->setValue(_settings.value(FPS_KEY, ui->edFPS->value()).toDouble());
+    ui->edTimeStart->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay()).toInt()));
 
     this->move(QApplication::desktop()->screenGeometry().center() - this->rect().center());
 }
@@ -35,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     _settings.setValue(FPS_KEY, ui->edFPS->value());
+    _settings.setValue(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay());
 
     delete ui;
 }
@@ -106,6 +109,22 @@ void MainWindow::on_btSaveTSV_clicked()
     this->save(fileName, FMT_TSV);
 }
 
+void MainWindow::on_btSavePDF_clicked()
+{
+    QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
+    if (!_checkedStyles.isEmpty()) templateName.append(" (" + _checkedStyles.join(",") + ')');
+    templateName.append(".pdf");
+
+    const QString fileName = QFileDialog::getSaveFileName(this,
+                                                          "Выберите файл",
+                                                          QDir(templateName).path(),
+                                                          "PDF (*.pdf)");
+
+    if (fileName.isEmpty()) return;
+
+    _table.toPDF(fileName, _checkedStyles, ui->edFPS->value(), ui->edTimeStart->time().msecsSinceStartOfDay());
+}
+
 void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
 {
     Q_UNUSED(item);
@@ -150,6 +169,7 @@ void MainWindow::open(const QString &fileName)
     // Очистка
     ui->btSaveCSV->setEnabled(false);
     ui->btSaveTSV->setEnabled(false);
+    ui->btSavePDF->setEnabled(false);
     _fileInfo.setFile(fileName);
 
     // Чтение файла
@@ -196,6 +216,7 @@ void MainWindow::open(const QString &fileName)
     this->updateStyles();
     ui->btSaveCSV->setEnabled(true);
     ui->btSaveTSV->setEnabled(true);
+    ui->btSavePDF->setEnabled(true);
 }
 
 void MainWindow::save(const QString &fileName, const Format format)
@@ -209,16 +230,19 @@ void MainWindow::save(const QString &fileName, const Format format)
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
-    out.setGenerateByteOrderMark(true);
 
+    const double fps = ui->edFPS->value();
+    const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
     switch (format)
     {
     case FMT_CSV:
-        out << _table.toCSV(_checkedStyles, ui->edFPS->value());
+        out.setGenerateByteOrderMark(true);
+        out << _table.toCSV(_checkedStyles, fps, timeStart);
         break;
 
     case FMT_TSV:
-        out << _table.toTSV(_checkedStyles, ui->edFPS->value());
+        out.setGenerateByteOrderMark(true);
+        out << _table.toTSV(_checkedStyles, fps, timeStart);
         break;
 
     default:
