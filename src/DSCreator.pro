@@ -4,27 +4,27 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
-
-TARGET = DSCreator
 TEMPLATE = app
 
+QT += core gui widgets printsupport
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
+SOURCES += \
+    main.cpp \
+    mainwindow.cpp \
     script.cpp \
     table.cpp
 
-HEADERS  += mainwindow.h \
+HEADERS += \
+    mainwindow.h \
     script.h \
     table.h
 
-FORMS    += mainwindow.ui
+FORMS += mainwindow.ui
 
 RESOURCES += DSCreator.qrc
 
 RC_FILE = DSCreator.rc
 
 ICON = main.icns
+
+TARGET = DSCreator

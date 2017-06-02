@@ -15,11 +15,7 @@ const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QString FPS_KEY = "FPS";
 const QString TIME_START_KEY = "TimeStart";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
-#if QT_VERSION >= 0x050000
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
-#else
-const QString FILETYPES_FILTER = QTextCodec::codecForName("UTF-8")->toUnicode("Субтитры") + " (*." + FILETYPES.join(" *.") + ")";
-#endif
 
 
 MainWindow::MainWindow(QWidget *parent) :
