@@ -76,7 +76,7 @@ void MainWindow::on_btOpenSubtitles_clicked()
 void MainWindow::on_btSaveCSV_clicked()
 {
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedStyles.isEmpty()) templateName.append(" (" + _checkedStyles.join(",") + ')');
+    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
     templateName.append(".csv");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
@@ -92,7 +92,7 @@ void MainWindow::on_btSaveCSV_clicked()
 void MainWindow::on_btSaveTSV_clicked()
 {
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedStyles.isEmpty()) templateName.append(" (" + _checkedStyles.join(",") + ')');
+    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
     templateName.append(".tsv");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
@@ -108,7 +108,7 @@ void MainWindow::on_btSaveTSV_clicked()
 void MainWindow::on_btSavePDF_clicked()
 {
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedStyles.isEmpty()) templateName.append(" (" + _checkedStyles.join(",") + ')');
+    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
     templateName.append(".pdf");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
@@ -118,18 +118,18 @@ void MainWindow::on_btSavePDF_clicked()
 
     if (fileName.isEmpty()) return;
 
-    _table.toPDF(fileName, _checkedStyles, ui->edFPS->value(), ui->edTimeStart->time().msecsSinceStartOfDay());
+    _table.toPDF(fileName, _checkedActors, ui->edFPS->value(), ui->edTimeStart->time().msecsSinceStartOfDay());
 }
 
-void MainWindow::on_lstStyles_itemChanged(QListWidgetItem *item)
+void MainWindow::on_lstActors_itemChanged(QListWidgetItem *item)
 {
     Q_UNUSED(item);
 
-    _checkedStyles.clear();
-    for (int i = 0; i < ui->lstStyles->count(); ++i)
+    _checkedActors.clear();
+    for (int i = 0; i < ui->lstActors->count(); ++i)
     {
-        const QListWidgetItem* const item = ui->lstStyles->item(i);
-        if (Qt::Checked == item->checkState()) _checkedStyles.append(item->text());
+        const QListWidgetItem* const item = ui->lstActors->item(i);
+        if (Qt::Checked == item->checkState()) _checkedActors.append(item->text());
     }
 }
 
@@ -145,16 +145,16 @@ QString UrlToPath(const QUrl &url)
     return QString::null;
 }
 
-void MainWindow::updateStyles()
+void MainWindow::updateActors()
 {
-    ui->lstStyles->clear();
+    ui->lstActors->clear();
 
-    QStringList styles = _table.styles();
-    styles.sort();
+    QStringList actors = _table.actors();
+    actors.sort();
 
-    foreach (const QString& style, styles)
+    foreach (const QString& actor, actors)
     {
-        QListWidgetItem* item = new QListWidgetItem(style, ui->lstStyles);
+        QListWidgetItem* item = new QListWidgetItem(actor, ui->lstActors);
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
         item->setCheckState(Qt::Unchecked);
     }
@@ -209,7 +209,7 @@ void MainWindow::open(const QString &fileName)
     _table = script;
     _table.mergeSiblings();
 
-    this->updateStyles();
+    this->updateActors();
     ui->btSaveCSV->setEnabled(true);
     ui->btSaveTSV->setEnabled(true);
     ui->btSavePDF->setEnabled(true);
@@ -233,11 +233,11 @@ void MainWindow::save(const QString &fileName, const Format format)
     switch (format)
     {
     case FMT_CSV:
-        out << _table.toCSV(_checkedStyles, fps, timeStart);
+        out << _table.toCSV(_checkedActors, fps, timeStart);
         break;
 
     case FMT_TSV:
-        out << _table.toTSV(_checkedStyles, fps, timeStart);
+        out << _table.toTSV(_checkedActors, fps, timeStart);
         break;
 
     default:

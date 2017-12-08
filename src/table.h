@@ -13,7 +13,7 @@ struct Row
 {
     uint start;
     uint end;
-    QString style;
+    QString actor;
     QString text;
 };
 
@@ -29,16 +29,16 @@ public:
     void append(Row* ptr);
     void import(const Script::Script& script);
     void mergeSiblings();
-    QStringList styles() const;
-    QString toCSV(const QStringList& styles, const double fps, const int timeStart) const;
-    QString toTSV(const QStringList& styles, const double fps, const int timeStart) const;
-    void toPDF(const QString& fileName, const QStringList& styles, const double fps, const int timeStart) const;
+    QStringList actors() const;
+    QString toCSV(const QStringList& actors, const double fps, const int timeStart) const;
+    QString toTSV(const QStringList& actors, const double fps, const int timeStart) const;
+    void toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart) const;
 
 private:
     QList<Row*> _rows;
 
     QString _timeToPT(const uint time, const double fps, const int timeStart) const;
-    QString _generate(const QStringList& styles, const double fps, const int timeStart, const QChar separator) const;
+    QString _generate(const QStringList& actors, const double fps, const int timeStart, const QChar separator) const;
 };
 }
 

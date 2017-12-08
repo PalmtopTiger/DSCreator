@@ -46,15 +46,18 @@ void Table::append(Row* ptr)
 
 void Table::import(const Script::Script& script)
 {
+    const QString emptyActor = "[не размечено]";
     const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
+    QString actor;
     Row* row;
     foreach (const Script::Line::Event* event, script.events.content)
     {
-        row = new Row;
+        actor = event->actorName.trimmed();
+        row   = new Row;
 
         row->start = event->start;
         row->end   = event->end;
-        row->style = event->style.trimmed();
+        row->actor = actor.isEmpty() ? emptyActor : actor;
         row->text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
 
         this->append(row);
@@ -68,8 +71,8 @@ void Table::mergeSiblings()
     QList<Row*>::iterator prev = _rows.begin(), cur = _rows.begin();
     while (cur != _rows.end())
     {
-        // Если стиль совпадает, текст прошлой не оканчивается на точку и текущая начинается с маленькой буквы
-        if ( cur != _rows.begin() && (*cur)->style == (*prev)->style && (*cur)->text.contains(phraseNotBegin) && (*prev)->text.contains(phraseNotEnd) )
+        // Если актёр совпадает, текст прошлой не оканчивается на точку и текущая начинается с маленькой буквы
+        if ( cur != _rows.begin() && (*cur)->actor == (*prev)->actor && (*cur)->text.contains(phraseNotBegin) && (*prev)->text.contains(phraseNotEnd) )
         {
             (*prev)->end  = (*cur)->end;
             (*prev)->text = (*prev)->text + " " + (*cur)->text;
@@ -84,14 +87,14 @@ void Table::mergeSiblings()
     }
 }
 
-QStringList Table::styles() const
+QStringList Table::actors() const
 {
-    QSet<QString> styles;
+    QSet<QString> actors;
     foreach (const Row* row, _rows)
     {
-        styles.insert(row->style);
+        actors.insert(row->actor);
     }
-    return styles.values();
+    return actors.values();
 }
 
 QString Table::_timeToPT(const uint time, const double fps, const int timeStart) const
@@ -109,7 +112,7 @@ QString Table::_timeToPT(const uint time, const double fps, const int timeStart)
             .arg(qFloor(msec * fps / 1000.0), 2, 10, QChar('0'));
 }
 
-QString Table::_generate(const QStringList& styles, const double fps, const int timeStart, const QChar separator) const
+QString Table::_generate(const QStringList& actors, const double fps, const int timeStart, const QChar separator) const
 {
     QString result;
 
@@ -120,11 +123,11 @@ QString Table::_generate(const QStringList& styles, const double fps, const int 
     QString id;
     foreach (const Row* row, _rows)
     {
-        if ( styles.isEmpty() || styles.contains(row->style, Qt::CaseInsensitive) )
+        if ( actors.isEmpty() || actors.contains(row->actor, Qt::CaseInsensitive) )
         {
-            counter = counters.value(row->style, 0) + 1;
-            counters[row->style] = counter;
-            id = QString("%1%2").arg(row->style).arg(counter, width, 10, QChar('0'));
+            counter = counters.value(row->actor, 0) + 1;
+            counters[row->actor] = counter;
+            id = QString("%1%2").arg(row->actor).arg(counter, width, 10, QChar('0'));
 
             if (separator == SEP_CSV)
             {
@@ -156,17 +159,17 @@ QString Table::_generate(const QStringList& styles, const double fps, const int 
     return result;
 }
 
-QString Table::toCSV(const QStringList& styles, const double fps, const int timeStart) const
+QString Table::toCSV(const QStringList& actors, const double fps, const int timeStart) const
 {
-    return _generate(styles, fps, timeStart, SEP_CSV);
+    return _generate(actors, fps, timeStart, SEP_CSV);
 }
 
-QString Table::toTSV(const QStringList& styles, const double fps, const int timeStart) const
+QString Table::toTSV(const QStringList& actors, const double fps, const int timeStart) const
 {
-    return _generate(styles, fps, timeStart, SEP_TSV);
+    return _generate(actors, fps, timeStart, SEP_TSV);
 }
 
-void Table::toPDF(const QString& fileName, const QStringList& styles, const double fps, const int timeStart) const
+void Table::toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart) const
 {
     QTextDocument document;
     document.setDefaultFont(QFont("Helvetica", 14));
@@ -177,13 +180,13 @@ void Table::toPDF(const QString& fileName, const QStringList& styles, const doub
     uint counter;
     foreach (const Row* row, _rows)
     {
-        if ( styles.isEmpty() || styles.contains(row->style, Qt::CaseInsensitive) )
+        if ( actors.isEmpty() || actors.contains(row->actor, Qt::CaseInsensitive) )
         {
-            counter = counters.value(row->style, 0) + 1;
-            counters[row->style] = counter;
+            counter = counters.value(row->actor, 0) + 1;
+            counters[row->actor] = counter;
 
             cursor.insertHtml( QString("<b>%1%2</b> %3<br/>%4")
-                               .arg(row->style)
+                               .arg(row->actor)
                                .arg(counter, width, 10, QChar('0'))
                                .arg(_timeToPT(row->start, fps, timeStart))
                                .arg(row->text) );

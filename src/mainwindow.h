@@ -27,18 +27,18 @@ private slots:
     void on_btSaveCSV_clicked();
     void on_btSaveTSV_clicked();
     void on_btSavePDF_clicked();
-    void on_lstStyles_itemChanged(QListWidgetItem *item);
+    void on_lstActors_itemChanged(QListWidgetItem *item);
 
 private:
     Ui::MainWindow *ui;
     QSettings _settings;
     QFileInfo _fileInfo;
     Table::Table _table;
-    QStringList _checkedStyles;
+    QStringList _checkedActors;
 
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
-    void updateStyles();
+    void updateActors();
     void open(const QString &fileName);
     void save(const QString &fileName, const Format format);
 };
