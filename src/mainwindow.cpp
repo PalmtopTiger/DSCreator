@@ -14,6 +14,7 @@ QString UrlToPath(const QUrl &url);
 const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QString FPS_KEY = "FPS";
 const QString TIME_START_KEY = "TimeStart";
+const QString JOIN_INTERVAL_KEY = "JoinInterval";
 const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
 
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->edFPS->setValue(_settings.value(FPS_KEY, ui->edFPS->value()).toDouble());
     ui->edTimeStart->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay()).toInt()));
+    ui->edJoinInterval->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(JOIN_INTERVAL_KEY, ui->edJoinInterval->time().msecsSinceStartOfDay()).toInt()));
 
     this->move(QApplication::desktop()->screenGeometry().center() - this->rect().center());
 }
@@ -34,6 +36,7 @@ MainWindow::~MainWindow()
 {
     _settings.setValue(FPS_KEY, ui->edFPS->value());
     _settings.setValue(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay());
+    _settings.setValue(JOIN_INTERVAL_KEY, ui->edJoinInterval->time().msecsSinceStartOfDay());
 
     delete ui;
 }
@@ -118,7 +121,11 @@ void MainWindow::on_btSavePDF_clicked()
 
     if (fileName.isEmpty()) return;
 
-    _table.toPDF(fileName, _checkedActors, ui->edFPS->value(), ui->edTimeStart->time().msecsSinceStartOfDay());
+    _table.toPDF(fileName,
+                 _checkedActors,
+                 ui->edFPS->value(),
+                 ui->edTimeStart->time().msecsSinceStartOfDay(),
+                 ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
 void MainWindow::on_lstActors_itemChanged(QListWidgetItem *item)
@@ -207,7 +214,6 @@ void MainWindow::open(const QString &fileName)
     fin.close();
 
     _table = script;
-    _table.mergeSiblings();
 
     this->updateActors();
     ui->btSaveCSV->setEnabled(true);
@@ -230,14 +236,15 @@ void MainWindow::save(const QString &fileName, const Format format)
 
     const double fps = ui->edFPS->value();
     const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
+    const int joinInterval = ui->edJoinInterval->time().msecsSinceStartOfDay();
     switch (format)
     {
     case FMT_CSV:
-        out << _table.toCSV(_checkedActors, fps, timeStart);
+        out << _table.toCSV(_checkedActors, fps, timeStart, joinInterval);
         break;
 
     case FMT_TSV:
-        out << _table.toTSV(_checkedActors, fps, timeStart);
+        out << _table.toTSV(_checkedActors, fps, timeStart, joinInterval);
         break;
 
     default:

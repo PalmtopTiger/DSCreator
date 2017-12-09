@@ -16,6 +16,7 @@ struct Row
     QString actor;
     QString text;
 };
+typedef QList<Row*> RowList;
 
 class Table
 {
@@ -24,21 +25,18 @@ public:
     Table(const Script::Script& script);
     ~Table();
     Table& operator=(const Script::Script& script);
-    void clear();
-    bool isEmpty() const;
-    void append(Row* ptr);
     void import(const Script::Script& script);
-    void mergeSiblings();
     QStringList actors() const;
-    QString toCSV(const QStringList& actors, const double fps, const int timeStart) const;
-    QString toTSV(const QStringList& actors, const double fps, const int timeStart) const;
-    void toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart) const;
+    QString toCSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
+    QString toTSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
+    void toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
 
 private:
-    QList<Row*> _rows;
+    RowList _rows;
 
+    RowList _joinedRows(const int joinInterval) const;
     QString _timeToPT(const uint time, const double fps, const int timeStart) const;
-    QString _generate(const QStringList& actors, const double fps, const int timeStart, const QChar separator) const;
+    QString _generate(const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator) const;
 };
 }
 

@@ -57,9 +57,37 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="lbTime">
+       <widget class="QLabel" name="lbTimeStart">
         <property name="text">
          <string>Начало времён</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lbJoinInterval">
+        <property name="text">
+         <string>Максимальная пауза внутри фразы</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QTimeEdit" name="edJoinInterval">
+        <property name="maximumTime">
+         <time>
+          <hour>0</hour>
+          <minute>59</minute>
+          <second>59</second>
+         </time>
+        </property>
+        <property name="displayFormat">
+         <string>m:ss</string>
+        </property>
+        <property name="time">
+         <time>
+          <hour>0</hour>
+          <minute>0</minute>
+          <second>5</second>
+         </time>
         </property>
        </widget>
       </item>
