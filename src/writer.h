@@ -9,35 +9,17 @@ namespace Writer
 {
 const QChar SEP_CSV = ';', SEP_TSV = '\t';
 
-struct Row
+struct Phrase
 {
     uint start;
     uint end;
     QString actor;
     QString text;
 };
-// FIXME: Remove ptr, rename to line or phrase
-typedef QList<Row*> RowList;
+typedef QList<Phrase> PhraseList;
 
-class Table
-{
-public:
-    Table() {};
-    Table(const Script::Script& script);
-    ~Table();
-    Table& operator=(const Script::Script& script);
-    void import(const Script::Script& script);
-    QString toCSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
-    QString toTSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
-    void toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const;
-
-private:
-    RowList _rows;
-
-    RowList _joinedRows(const int joinInterval) const;
-    QString _timeToPT(const uint time, const double fps, const int timeStart) const;
-    QString _generate(const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator) const;
-};
+bool SaveSV(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator);
+void SavePDF(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval);
 }
 
 #endif // WRITER_H

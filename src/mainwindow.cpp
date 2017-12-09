@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "writer.h"
-#include <QTextCodec>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
 #include <QMessageBox>
@@ -78,67 +77,73 @@ void MainWindow::on_btOpenSubtitles_clicked()
 
 void MainWindow::on_btSaveCSV_clicked()
 {
+    QStringList actors   = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
+    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".csv");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
                                                           "Выберите файл",
                                                           QDir(templateName).path(),
                                                           "CSV (*.csv)");
-
     if (fileName.isEmpty()) return;
 
-    this->save(fileName, FMT_CSV);
+    if (Writer::SaveSV(_script,
+                       fileName,
+                       actors,
+                       ui->edFPS->value(),
+                       ui->edTimeStart->time().msecsSinceStartOfDay(),
+                       ui->edJoinInterval->time().msecsSinceStartOfDay(),
+                       Writer::SEP_CSV))
+    {
+        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
+    }
 }
 
 void MainWindow::on_btSaveTSV_clicked()
 {
+    QStringList actors   = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
+    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".tsv");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
                                                           "Выберите файл",
                                                           QDir(templateName).path(),
                                                           "TSV (*.tsv)");
-
     if (fileName.isEmpty()) return;
 
-    this->save(fileName, FMT_TSV);
+    if (Writer::SaveSV(_script,
+                       fileName,
+                       actors,
+                       ui->edFPS->value(),
+                       ui->edTimeStart->time().msecsSinceStartOfDay(),
+                       ui->edJoinInterval->time().msecsSinceStartOfDay(),
+                       Writer::SEP_TSV))
+    {
+        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
+    }
 }
 
 void MainWindow::on_btSavePDF_clicked()
 {
+    QStringList actors   = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!_checkedActors.isEmpty()) templateName.append(" (" + _checkedActors.join(",") + ')');
+    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".pdf");
 
     const QString fileName = QFileDialog::getSaveFileName(this,
                                                           "Выберите файл",
                                                           QDir(templateName).path(),
                                                           "PDF (*.pdf)");
-
     if (fileName.isEmpty()) return;
 
-    Writer::Table table = _script;
-    table.toPDF(fileName,
-                _checkedActors,
-                ui->edFPS->value(),
-                ui->edTimeStart->time().msecsSinceStartOfDay(),
-                ui->edJoinInterval->time().msecsSinceStartOfDay());
-}
-
-void MainWindow::on_lstActors_itemChanged(QListWidgetItem *item)
-{
-    Q_UNUSED(item);
-
-    _checkedActors.clear();
-    for (int i = 0; i < ui->lstActors->count(); ++i)
-    {
-        const QListWidgetItem* const item = ui->lstActors->item(i);
-        if (Qt::Checked == item->checkState()) _checkedActors.append(item->text());
-    }
+    Writer::SavePDF(_script,
+                    fileName,
+                    actors,
+                    ui->edFPS->value(),
+                    ui->edTimeStart->time().msecsSinceStartOfDay(),
+                    ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
 
@@ -160,7 +165,7 @@ void MainWindow::updateActors()
     QSet<QString> uniqueActors;
     foreach (const Script::Line::Event* event, _script.events.content)
     {
-        uniqueActors.insert(event->actorName); // FIXME: .trimmed()
+        uniqueActors.insert(event->actorName); // Already trimmed
     }
 
     QStringList actors = uniqueActors.values();
@@ -172,6 +177,17 @@ void MainWindow::updateActors()
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
         item->setCheckState(Qt::Unchecked);
     }
+}
+
+QStringList MainWindow::getCheckedActors() const
+{
+    QStringList actors;
+    for (int i = 0; i < ui->lstActors->count(); ++i)
+    {
+        const QListWidgetItem* const item = ui->lstActors->item(i);
+        if (Qt::Checked == item->checkState()) actors.append(item->text());
+    }
+    return actors;
 }
 
 void MainWindow::open(const QString &fileName)
@@ -220,42 +236,20 @@ void MainWindow::open(const QString &fileName)
     }
     fin.close();
 
-    this->updateActors();
-    ui->btSaveCSV->setEnabled(true);
-    ui->btSaveTSV->setEnabled(true);
-    ui->btSavePDF->setEnabled(true);
-}
-
-void MainWindow::save(const QString &fileName, const Format format)
-{
-    QFile fout(fileName);
-    if ( !fout.open(QFile::WriteOnly | QFile::Text) )
+    if (_script.events.content.isEmpty())
     {
-        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
-        return;
+        ui->lstActors->clear();
+        ui->btSaveCSV->setEnabled(false);
+        ui->btSaveTSV->setEnabled(false);
+        ui->btSavePDF->setEnabled(false);
+
+        QMessageBox::warning(this, "Сообщение", "В субтитрах нет фраз");
     }
-
-    QTextStream out(&fout);
-    out.setCodec( QTextCodec::codecForName("UTF-8") );
-    out.setGenerateByteOrderMark(true);
-
-    const double fps = ui->edFPS->value();
-    const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
-    const int joinInterval = ui->edJoinInterval->time().msecsSinceStartOfDay();
-    Writer::Table table = _script;
-    switch (format)
+    else
     {
-    case FMT_CSV:
-        out << table.toCSV(_checkedActors, fps, timeStart, joinInterval);
-        break;
-
-    case FMT_TSV:
-        out << table.toTSV(_checkedActors, fps, timeStart, joinInterval);
-        break;
-
-    default:
-        QMessageBox::critical(this, "Ошибка", "Неизвестный формат файла");
+        this->updateActors();
+        ui->btSaveCSV->setEnabled(true);
+        ui->btSaveTSV->setEnabled(true);
+        ui->btSavePDF->setEnabled(true);
     }
-
-    fout.close();
 }

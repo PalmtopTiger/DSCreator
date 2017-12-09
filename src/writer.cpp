@@ -1,82 +1,14 @@
 #include "writer.h"
 #include <QtMath>
-#include <QSet>
-#include <QMap>
+//#include <QMap>
+#include <QTextCodec>
 #include <QTextDocument>
 #include <QTextCursor>
 #include <QPrinter>
 
 namespace Writer
 {
-Table::Table(const Script::Script& script)
-{
-    this->import(script);
-}
-
-Table::~Table()
-{
-    qDeleteAll(_rows);
-}
-
-Table& Table::operator=(const Script::Script& script)
-{
-    if (!_rows.isEmpty())
-    {
-        qDeleteAll(_rows);
-        _rows.clear();
-    }
-    this->import(script);
-    return *this;
-}
-
-void Table::import(const Script::Script& script)
-{
-    const QString emptyActor = "[не размечено]";
-    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
-    QString actor;
-    Row* row;
-    foreach (const Script::Line::Event* event, script.events.content)
-    {
-        actor = event->actorName.trimmed();
-        row   = new Row;
-
-        row->start = event->start;
-        row->end   = event->end;
-        row->actor = actor.isEmpty() ? emptyActor : actor;
-        row->text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
-
-        _rows.append(row);
-    }
-}
-
-// Возвращает объединённые фразы
-RowList Table::_joinedRows(const int joinInterval) const
-{
-    RowList result;
-    Row* joined = nullptr;
-    foreach (const Row* row, _rows)
-    {
-        // Если фраза не первая, актёр совпадает и расстояние между фразами не более 5 сек.
-        if ( joined && joinInterval > 0 && row->actor == joined->actor &&
-             row->start >= joined->end && row->start - joined->end <= static_cast<uint>(joinInterval) )
-        {
-            joined->end  = row->end;
-            joined->text = joined->text + " " + row->text;
-        }
-        else
-        {
-            if (joined) result.append(joined);
-
-            joined = new Row;
-            (*joined) = (*row);
-        }
-    }
-    if (joined) result.append(joined);
-
-    return result;
-}
-
-QString Table::_timeToPT(const uint time, const double fps, const int timeStart) const
+QString TimeToPT(const uint time, const double fps, const int timeStart)
 {
     const uint newTime = time + timeStart;
     uint hour = newTime / 3600000u,
@@ -91,9 +23,52 @@ QString Table::_timeToPT(const uint time, const double fps, const int timeStart)
             .arg(qFloor(msec * fps / 1000.0), 2, 10, QChar('0'));
 }
 
-QString Table::_generate(const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator) const
+// Удаляет теги из текста фраз и объединяет соседние
+PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
 {
-    RowList joinedRows = _joinedRows(joinInterval);
+    const QString emptyActor = "[не размечено]";
+    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
+
+    PhraseList result;
+    Phrase phrase;
+    QString actor, text;
+    bool first = true;
+    foreach (const Script::Line::Event* event, script.events.content)
+    {
+        actor = event->actorName.isEmpty() ? emptyActor : event->actorName; // Already trimmed
+        text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
+
+        // Если интервал указан, фраза не первая, актёр совпадает и расстояние между фразами не более 5 сек.
+        if (!first &&
+            joinInterval > 0 &&
+            actor == phrase.actor &&
+            event->start >= phrase.end &&
+            event->start - phrase.end <= static_cast<uint>(joinInterval))
+        {
+            phrase.end  = event->end;
+            phrase.text += " ";
+            phrase.text += text;
+        }
+        else
+        {
+            if (!first) result.append(phrase);
+
+            phrase.start = event->start;
+            phrase.end   = event->end;
+            phrase.actor = actor;
+            phrase.text  = text;
+
+            first = false;
+        }
+    }
+    if (!first) result.append(phrase);
+
+    return result;
+}
+
+bool SaveSV(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator)
+{
+    PhraseList phrases = PreparePhrases(script, joinInterval);
 
     // const int width = QString::number(rows.size()).size();
     // QMap<QString, uint> counters;
@@ -102,9 +77,9 @@ QString Table::_generate(const QStringList& actors, const double fps, const int 
     QString prevActor;
     QStringList line;
     QString result;
-    foreach (const Row* row, joinedRows)
+    foreach (const Phrase& phrase, phrases)
     {
-        if ( actors.isEmpty() || actors.contains(row->actor, Qt::CaseInsensitive) )
+        if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
         {
             // counter = counters.value(row->actor, 0) + 1;
             // counters[row->actor] = counter;
@@ -112,15 +87,15 @@ QString Table::_generate(const QStringList& actors, const double fps, const int 
 
             if (separator == SEP_CSV)
             {
-                line.append( _timeToPT(row->start, fps, timeStart) );
-                line.append( _timeToPT(row->end, fps, timeStart) );
-                line.append( row->actor != prevActor ? row->actor : QString::null );
-                line.append( row->text );
+                line.append( TimeToPT(phrase.start, fps, timeStart) );
+                line.append( TimeToPT(phrase.end, fps, timeStart) );
+                line.append( phrase.actor != prevActor ? phrase.actor : QString::null );
+                line.append( phrase.text );
             }
             else if (separator == SEP_TSV)
             {
-                line.append( row->actor );
-                line.append( _timeToPT(row->start, fps, timeStart) );
+                line.append( phrase.actor );
+                line.append( TimeToPT(phrase.start, fps, timeStart) );
             }
 
             for (QStringList::iterator str = line.begin(); str != line.end(); ++str)
@@ -135,28 +110,25 @@ QString Table::_generate(const QStringList& actors, const double fps, const int 
             result.append( "\n" );
             line.clear();
 
-            prevActor = row->actor;
+            prevActor = phrase.actor;
         }
     }
 
-    qDeleteAll(joinedRows);
+    QFile fout(fileName);
+    if (!fout.open(QFile::WriteOnly | QFile::Text)) return true;
 
-    return result;
+    QTextStream out(&fout);
+    out.setCodec( QTextCodec::codecForName("UTF-8") );
+    out.setGenerateByteOrderMark(true);
+    out << result;
+
+    fout.close();
+    return false;
 }
 
-QString Table::toCSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const
+void SavePDF(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
 {
-    return _generate(actors, fps, timeStart, joinInterval, SEP_CSV);
-}
-
-QString Table::toTSV(const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const
-{
-    return _generate(actors, fps, timeStart, joinInterval, SEP_TSV);
-}
-
-void Table::toPDF(const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval) const
-{
-    RowList joinedRows = _joinedRows(joinInterval);
+    PhraseList phrases = PreparePhrases(script, joinInterval);
 
     QTextDocument document;
     document.setDefaultFont(QFont("Helvetica", 14));
@@ -165,24 +137,27 @@ void Table::toPDF(const QString& fileName, const QStringList& actors, const doub
     // const int width = QString::number(_rows.size()).size();
     // QMap<QString, uint> counters;
     // uint counter;
-    foreach (const Row* row, joinedRows)
+    bool first = true;
+    foreach (const Phrase& phrase, phrases)
     {
-        if ( actors.isEmpty() || actors.contains(row->actor, Qt::CaseInsensitive) )
+        if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
         {
             // counter = counters.value(row->actor, 0) + 1;
             // counters[row->actor] = counter;
             // .arg(counter, width, 10, QChar('0'))
 
-            cursor.insertHtml( QString("<b>%1</b> %2<br/>%3")
-                               .arg(row->actor)
-                               .arg(_timeToPT(row->start, fps, timeStart))
-                               .arg(row->text) );
-
-            if (row != joinedRows.last())
+            if (!first)
             {
                 cursor.insertBlock();
                 cursor.insertBlock();
             }
+
+            cursor.insertHtml( QString("<b>%1</b> %2<br/>%3")
+                               .arg(phrase.actor)
+                               .arg(TimeToPT(phrase.start, fps, timeStart))
+                               .arg(phrase.text) );
+
+            first = false;
         }
     }
 
