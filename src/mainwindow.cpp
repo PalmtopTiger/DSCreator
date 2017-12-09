@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "script.h"
+#include "writer.h"
 #include <QTextCodec>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
@@ -121,11 +121,12 @@ void MainWindow::on_btSavePDF_clicked()
 
     if (fileName.isEmpty()) return;
 
-    _table.toPDF(fileName,
-                 _checkedActors,
-                 ui->edFPS->value(),
-                 ui->edTimeStart->time().msecsSinceStartOfDay(),
-                 ui->edJoinInterval->time().msecsSinceStartOfDay());
+    Writer::Table table = _script;
+    table.toPDF(fileName,
+                _checkedActors,
+                ui->edFPS->value(),
+                ui->edTimeStart->time().msecsSinceStartOfDay(),
+                ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
 void MainWindow::on_lstActors_itemChanged(QListWidgetItem *item)
@@ -156,7 +157,13 @@ void MainWindow::updateActors()
 {
     ui->lstActors->clear();
 
-    QStringList actors = _table.actors();
+    QSet<QString> uniqueActors;
+    foreach (const Script::Line::Event* event, _script.events.content)
+    {
+        uniqueActors.insert(event->actorName); // FIXME: .trimmed()
+    }
+
+    QStringList actors = uniqueActors.values();
     actors.sort();
 
     foreach (const QString& actor, actors)
@@ -174,6 +181,7 @@ void MainWindow::open(const QString &fileName)
     ui->btSaveTSV->setEnabled(false);
     ui->btSavePDF->setEnabled(false);
     _fileInfo.setFile(fileName);
+    _script.clear();
 
     // Чтение файла
     QFile fin(fileName);
@@ -183,13 +191,12 @@ void MainWindow::open(const QString &fileName)
         return;
     }
 
-    Script::Script script;
     QTextStream in(&fin);
     switch (Script::DetectFormat(in))
     {
     case Script::SCR_SSA:
     case Script::SCR_ASS:
-        if ( !Script::ParseSSA(in, script) )
+        if ( !Script::ParseSSA(in, _script) )
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SSA/ASS");
             fin.close();
@@ -198,7 +205,7 @@ void MainWindow::open(const QString &fileName)
         break;
 
     case Script::SCR_SRT:
-        if ( !Script::ParseSRT(in, script) )
+        if ( !Script::ParseSRT(in, _script) )
         {
             QMessageBox::critical(this, "Ошибка", "Файл не соответствует формату SRT");
             fin.close();
@@ -212,8 +219,6 @@ void MainWindow::open(const QString &fileName)
         return;
     }
     fin.close();
-
-    _table = script;
 
     this->updateActors();
     ui->btSaveCSV->setEnabled(true);
@@ -237,14 +242,15 @@ void MainWindow::save(const QString &fileName, const Format format)
     const double fps = ui->edFPS->value();
     const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
     const int joinInterval = ui->edJoinInterval->time().msecsSinceStartOfDay();
+    Writer::Table table = _script;
     switch (format)
     {
     case FMT_CSV:
-        out << _table.toCSV(_checkedActors, fps, timeStart, joinInterval);
+        out << table.toCSV(_checkedActors, fps, timeStart, joinInterval);
         break;
 
     case FMT_TSV:
-        out << _table.toTSV(_checkedActors, fps, timeStart, joinInterval);
+        out << table.toTSV(_checkedActors, fps, timeStart, joinInterval);
         break;
 
     default:

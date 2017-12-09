@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "table.h"
+#include "script.h"
 #include <QMainWindow>
 #include <QSettings>
 #include <QFileInfo>
@@ -12,6 +12,7 @@ namespace Ui {
 class MainWindow;
 }
 
+// FIXME: Use Writer
 enum Format {FMT_CSV, FMT_TSV};
 
 class MainWindow : public QMainWindow
@@ -33,7 +34,7 @@ private:
     Ui::MainWindow *ui;
     QSettings _settings;
     QFileInfo _fileInfo;
-    Table::Table _table;
+    Script::Script _script;
     QStringList _checkedActors;
 
     void dragEnterEvent(QDragEnterEvent *event);

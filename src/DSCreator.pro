@@ -12,12 +12,12 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     script.cpp \
-    table.cpp
+    writer.cpp
 
 HEADERS += \
     mainwindow.h \
     script.h \
-    table.h
+    writer.h
 
 FORMS += mainwindow.ui
 

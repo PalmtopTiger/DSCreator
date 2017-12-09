@@ -1,4 +1,4 @@
-#include "table.h"
+#include "writer.h"
 #include <QtMath>
 #include <QSet>
 #include <QMap>
@@ -6,7 +6,7 @@
 #include <QTextCursor>
 #include <QPrinter>
 
-namespace Table
+namespace Writer
 {
 Table::Table(const Script::Script& script)
 {
@@ -47,16 +47,6 @@ void Table::import(const Script::Script& script)
 
         _rows.append(row);
     }
-}
-
-QStringList Table::actors() const
-{
-    QSet<QString> actors;
-    foreach (const Row* row, _rows)
-    {
-        actors.insert(row->actor);
-    }
-    return actors.values();
 }
 
 // Возвращает объединённые фразы
