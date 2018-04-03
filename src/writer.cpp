@@ -10,15 +10,28 @@ namespace Writer
 {
 QString TimeToPT(const uint time, const double fps, const int timeStart)
 {
-    int newTime = static_cast<int>(time) + timeStart;
-    if (newTime < 0) newTime = 0;
+    // Отделяем кадры от времени
+    const int frames = timeStart % 1000;
+    int newTime = static_cast<int>(time) + (timeStart - frames);
+
+    // Пересчитываем кадры в миллисекунды
+    const double tmpMsec = static_cast<double>(frames) * 1000.0 / fps;
+    newTime += tmpMsec < 0 ? qFloor(tmpMsec) : qCeil(tmpMsec);
+
+    // Запоминаем знак
+    const bool negative = newTime < 0;
+    newTime = abs(newTime);
+
+    // Делим на компоненты
     const int hour = newTime / 3600000,
               min  = newTime % 3600000 / 60000,
               sec  = newTime % 60000   / 1000,
               msec = newTime % 1000;
 
+    // Собираем строку (последний компонент - кадры)
     const QChar fillChar = QChar('0');
-    return QString("%1:%2:%3:%4")
+    return QString("%1%2:%3:%4:%5")
+            .arg(negative ? QString('-') : QString::null)
             .arg(hour, 2, 10, fillChar)
             .arg(min,  2, 10, fillChar)
             .arg(sec,  2, 10, fillChar)

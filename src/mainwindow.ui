@@ -42,7 +42,7 @@
          <double>1.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>100.000000000000000</double>
+         <double>1000.000000000000000</double>
         </property>
         <property name="value">
          <double>25.000000000000000</double>
@@ -71,7 +71,7 @@
         <item>
          <widget class="QTimeEdit" name="edTimeStart">
           <property name="displayFormat">
-           <string>H:mm:ss</string>
+           <string>H:mm:ss:zzz</string>
           </property>
          </widget>
         </item>
