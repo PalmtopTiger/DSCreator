@@ -31,7 +31,7 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
     // Собираем строку (последний компонент - кадры)
     const QChar fillChar = QChar('0');
     return QString("%1%2:%3:%4:%5")
-            .arg(negative ? QString('-') : QString::null)
+            .arg(negative ? QString("−") : QString::null)
             .arg(hour, 2, 10, fillChar)
             .arg(min,  2, 10, fillChar)
             .arg(sec,  2, 10, fillChar)
