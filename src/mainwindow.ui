@@ -22,7 +22,7 @@
      <widget class="QListWidget" name="lstActors"/>
     </item>
     <item>
-     <layout class="QFormLayout" name="formLayout">
+     <layout class="QFormLayout" name="loSettings">
       <property name="fieldGrowthPolicy">
        <enum>QFormLayout::ExpandingFieldsGrow</enum>
       </property>
@@ -49,19 +49,33 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QTimeEdit" name="edTimeStart">
-        <property name="displayFormat">
-         <string>H:mm:ss</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="lbTimeStart">
         <property name="text">
          <string>Начало времён</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="loTimeStart">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="cbNegativeTimeStart">
+          <property name="text">
+           <string>−</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTimeEdit" name="edTimeStart">
+          <property name="displayFormat">
+           <string>H:mm:ss</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="lbJoinInterval">
@@ -94,7 +108,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="loButtons">
       <item>
        <widget class="QPushButton" name="btOpenSubtitles">
         <property name="text">

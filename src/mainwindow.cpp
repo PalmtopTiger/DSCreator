@@ -24,8 +24,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    const int timeStart = _settings.value(TIME_START_KEY, this->getTimeStart()).toInt();
+
     ui->edFPS->setValue(_settings.value(FPS_KEY, ui->edFPS->value()).toDouble());
-    ui->edTimeStart->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay()).toInt()));
+    ui->cbNegativeTimeStart->setChecked(timeStart < 0);
+    ui->edTimeStart->setTime(QTime::fromMSecsSinceStartOfDay(abs(timeStart)));
     ui->edJoinInterval->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(JOIN_INTERVAL_KEY, ui->edJoinInterval->time().msecsSinceStartOfDay()).toInt()));
 
     this->move(QApplication::desktop()->screenGeometry().center() - this->rect().center());
@@ -34,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     _settings.setValue(FPS_KEY, ui->edFPS->value());
-    _settings.setValue(TIME_START_KEY, ui->edTimeStart->time().msecsSinceStartOfDay());
+    _settings.setValue(TIME_START_KEY, this->getTimeStart());
     _settings.setValue(JOIN_INTERVAL_KEY, ui->edJoinInterval->time().msecsSinceStartOfDay());
 
     delete ui;
@@ -92,7 +95,7 @@ void MainWindow::on_btSaveCSV_clicked()
                        fileName,
                        actors,
                        ui->edFPS->value(),
-                       ui->edTimeStart->time().msecsSinceStartOfDay(),
+                       this->getTimeStart(),
                        ui->edJoinInterval->time().msecsSinceStartOfDay(),
                        Writer::SEP_CSV))
     {
@@ -117,7 +120,7 @@ void MainWindow::on_btSaveTSV_clicked()
                        fileName,
                        actors,
                        ui->edFPS->value(),
-                       ui->edTimeStart->time().msecsSinceStartOfDay(),
+                       this->getTimeStart(),
                        ui->edJoinInterval->time().msecsSinceStartOfDay(),
                        Writer::SEP_TSV))
     {
@@ -142,7 +145,7 @@ void MainWindow::on_btSavePDF_clicked()
                     fileName,
                     actors,
                     ui->edFPS->value(),
-                    ui->edTimeStart->time().msecsSinceStartOfDay(),
+                    this->getTimeStart(),
                     ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
@@ -188,6 +191,13 @@ QStringList MainWindow::getCheckedActors() const
         if (Qt::Checked == item->checkState()) actors.append(item->text());
     }
     return actors;
+}
+
+int MainWindow::getTimeStart() const
+{
+    const int timeStart = ui->edTimeStart->time().msecsSinceStartOfDay();
+
+    return ui->cbNegativeTimeStart->isChecked() ? -timeStart : timeStart;
 }
 
 void MainWindow::open(const QString &fileName)

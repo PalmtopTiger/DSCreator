@@ -10,17 +10,19 @@ namespace Writer
 {
 QString TimeToPT(const uint time, const double fps, const int timeStart)
 {
-    const uint newTime = time + timeStart;
-    uint hour = newTime / 3600000u,
-         min  = newTime % 3600000u / 60000u,
-         sec  = newTime % 60000u   / 1000u,
-         msec = newTime % 1000u;
+    int newTime = static_cast<int>(time) + timeStart;
+    if (newTime < 0) newTime = 0;
+    const int hour = newTime / 3600000,
+              min  = newTime % 3600000 / 60000,
+              sec  = newTime % 60000   / 1000,
+              msec = newTime % 1000;
 
+    const QChar fillChar = QChar('0');
     return QString("%1:%2:%3:%4")
-            .arg(hour, 2, 10, QChar('0'))
-            .arg(min,  2, 10, QChar('0'))
-            .arg(sec,  2, 10, QChar('0'))
-            .arg(qFloor(msec * fps / 1000.0), 2, 10, QChar('0'));
+            .arg(hour, 2, 10, fillChar)
+            .arg(min,  2, 10, fillChar)
+            .arg(sec,  2, 10, fillChar)
+            .arg(qFloor(static_cast<double>(msec) * fps / 1000.0), 2, 10, fillChar);
 }
 
 // Удаляет теги из текста фраз и объединяет соседние
