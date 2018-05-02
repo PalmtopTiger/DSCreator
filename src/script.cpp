@@ -75,8 +75,8 @@ uint StrToTime(const QString& str, const ScriptType type)
 QString TimeToStr(const uint time, const ScriptType type)
 {
     uint hour = time / 3600000u,
-            min  = time % 3600000u / 60000u,
-            sec  = time % 60000u   / 1000u,
+            min  = time / 60000u % 60u,
+            sec  = time / 1000u  % 60u,
             msec = time % 1000u;
 
     QString ret;

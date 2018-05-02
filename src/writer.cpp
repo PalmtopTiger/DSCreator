@@ -24,8 +24,8 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
 
     // Делим на компоненты
     const int hour = newTime / 3600000,
-              min  = newTime % 3600000 / 60000,
-              sec  = newTime % 60000   / 1000,
+              min  = newTime / 60000 % 60,
+              sec  = newTime / 1000  % 60,
               msec = newTime % 1000;
 
     // Собираем строку (последний компонент - кадры)
