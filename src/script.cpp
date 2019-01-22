@@ -558,7 +558,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                         tempStr = tempList.first().trimmed();
                         if ( tempStr.startsWith("&H") )
                         {
-                            ptr->primaryColour = tempStr.mid(2).toUInt(NULL, 16);
+                            ptr->primaryColour = tempStr.mid(2).toUInt(nullptr, 16);
                         }
                         else
                         {
@@ -573,7 +573,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                         tempStr = tempList.first().trimmed();
                         if ( tempStr.startsWith("&H") )
                         {
-                            ptr->secondaryColour = tempStr.mid(2).toUInt(NULL, 16);
+                            ptr->secondaryColour = tempStr.mid(2).toUInt(nullptr, 16);
                         }
                         else
                         {
@@ -588,7 +588,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                         tempStr = tempList.first().trimmed();
                         if ( tempStr.startsWith("&H") )
                         {
-                            ptr->outlineColour = tempStr.mid(2).toUInt(NULL, 16);
+                            ptr->outlineColour = tempStr.mid(2).toUInt(nullptr, 16);
                         }
                         else
                         {
@@ -603,7 +603,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                         tempStr = tempList.first().trimmed();
                         if ( tempStr.startsWith("&H") )
                         {
-                            ptr->backColour = tempStr.mid(2).toUInt(NULL, 16);
+                            ptr->backColour = tempStr.mid(2).toUInt(nullptr, 16);
                         }
                         else
                         {
@@ -898,9 +898,6 @@ bool ParseSSA(QTextStream& in, Script& script)
                 script.graphics.append(new Line::Base(line));
             }
             break;
-
-        default:
-            return false;
         }
     }
 
@@ -996,9 +993,6 @@ bool ParseSRT(QTextStream& in, Script& script)
                 tempList.append(line);
             }
             break;
-
-        default:
-            return false;
         }
     }
     if (!tempList.isEmpty())
