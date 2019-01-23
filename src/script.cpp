@@ -198,9 +198,9 @@ QString Style::generate(const ScriptType type) const
         list.append( QString::number(outline, 'g', 10) );
         list.append( QString::number(shadow,  'g', 10) );
 
-        if (SCR_SSA == type && alignment > 0 && alignment < sizeof(AlignmentASS))
+        if (SCR_SSA == type && alignment > 0 && alignment < AlignmentASS.length())
         {
-            list.append( QString::number(AlignmentASS[alignment]) );
+            list.append( QString::number(AlignmentASS.at(alignment)) );
         }
         else
         {
@@ -696,9 +696,9 @@ bool ParseSSA(QTextStream& in, Script& script)
                     if (!tempList.isEmpty())
                     {
                         ptr->alignment = tempList.first().trimmed().toUShort();
-                        if (SCR_SSA == type && ptr->alignment > 0 && ptr->alignment < sizeof(Line::AlignmentSSA))
+                        if (SCR_SSA == type && ptr->alignment > 0 && ptr->alignment < Line::AlignmentSSA.length())
                         {
-                            ptr->alignment = Line::AlignmentSSA[ptr->alignment];
+                            ptr->alignment = Line::AlignmentSSA.at(ptr->alignment);
                         }
 
                         if (ptr->alignment < 1 || ptr->alignment > 9)

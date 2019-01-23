@@ -1,11 +1,11 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
+#include <QVector>
 #include <QList>
 #include <QString>
 #include <QStringList>
 #include <QTextStream>
-#include <QDebug>
 
 
 namespace Script
@@ -25,8 +25,8 @@ const QString graphics  = "Graphics";
 
 namespace Line
 {
-const ushort AlignmentSSA[] = {0, 1, 2, 3, 0, 7, 8, 9, 0, 4, 5, 6};
-const ushort AlignmentASS[] = {0, 1, 2, 3, 9, 10, 11, 5, 6, 7};
+const QVector<ushort> AlignmentSSA = {0, 1, 2, 3, 0, 7, 8, 9, 0, 4, 5, 6};
+const QVector<ushort> AlignmentASS = {0, 1, 2, 3, 9, 10, 11, 5, 6, 7};
 
 const QString defaultStyle = "Default";
 const QString defaultFont = "Arial";
