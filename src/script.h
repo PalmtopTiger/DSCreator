@@ -64,6 +64,8 @@ public:
         _before(before)
     {}
 
+    void clearBefore();
+    QString name() const;
     QString generate(const ScriptType type) const;
 
 protected:
@@ -161,7 +163,7 @@ public:
         _sectionType(original._sectionType),
         _after(original._after)
     {
-        foreach (const T* const e, original.content) content.append(new T(*e));
+        for (const T* const e : original.content) content.append(new T(*e));
     }
     Section(const SectionType sectionType) :
         _sectionType(sectionType)
@@ -172,11 +174,16 @@ public:
         qDeleteAll(content);
     }
 
+    void clearAfter()
+    {
+        _after.clear();
+    }
+
     void clear()
     {
         qDeleteAll(content);
         content.clear();
-        _after.clear();
+        clearAfter();
     }
 
     bool isEmpty() const
@@ -243,7 +250,7 @@ public:
                 break;
             }
 
-            foreach (T* const e, content)
+            for (const T* const e : qAsConst(content))
             {
                 result.append( e->generate(type) );
                 result.append("\n");
@@ -304,6 +311,8 @@ public:
     Section<Line::Base>   fonts;
     Section<Line::Base>   graphics;
 
+    void clearBefore();
+    void clearAfter();
     void clear();
     void appendBefore(const QStringList& before);
     void appendAfter(const QStringList& after);

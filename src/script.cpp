@@ -19,6 +19,7 @@
 
 #include "script.h"
 #include <QHash>
+#include <QRegularExpression>
 
 
 namespace Script
@@ -29,10 +30,10 @@ uint StrToTime(const QString& str, const ScriptType type)
 {
     // В этой функции мы пытаемся получить хоть какое-то время из строки.
     // Считаем, что чисел может недоставать только с конца (миллисекунды и далее).
-    uint hour    = 0,
-            min  = 0,
-            sec  = 0,
-            msec = 0;
+    uint hour = 0,
+         min  = 0,
+         sec  = 0,
+         msec = 0;
     QStringList list = str.split(QChar(':'));
 
     // Часы
@@ -74,10 +75,10 @@ uint StrToTime(const QString& str, const ScriptType type)
 
 QString TimeToStr(const uint time, const ScriptType type)
 {
-    uint hour = time / 3600000u,
-            min  = time / 60000u % 60u,
-            sec  = time / 1000u  % 60u,
-            msec = time % 1000u;
+    const uint hour = time / 3600000u,
+               min  = time / 60000u % 60u,
+               sec  = time / 1000u  % 60u,
+               msec = time % 1000u;
 
     QString ret;
     if (SCR_ASS == type || SCR_SSA == type)
@@ -100,6 +101,16 @@ QString Base::generate(const ScriptType type) const
 }
 
 // Простейшая строка с двоеточием
+void Named::clearBefore()
+{
+    _before.clear();
+}
+
+QString Named::name() const
+{
+    return _name;
+}
+
 QString Named::generate(const ScriptType type, const QString& value) const
 {
     QString result;
@@ -268,7 +279,7 @@ QString Event::generate(const ScriptType type) const
     else if (SCR_SRT == type)
     {
         result.append( QString("%1 --> %2\n").arg(TimeToStr(start, type)).arg(TimeToStr(end, type)) );
-        result.append( QString(text).replace(QRegExp("\\\\n", Qt::CaseInsensitive), "\n") );
+        result.append( QString(text).replace("\\N", "\n", Qt::CaseInsensitive) );
     }
 
     return result;
@@ -276,6 +287,16 @@ QString Event::generate(const ScriptType type) const
 }
 
 // Скрипт
+void Script::clearBefore()
+{
+    _before.clear();
+}
+
+void Script::clearAfter()
+{
+    _after.clear();
+}
+
 void Script::clear()
 {
     header.clear();
@@ -283,8 +304,8 @@ void Script::clear()
     events.clear();
     fonts.clear();
     graphics.clear();
-    _before.clear();
-    _after.clear();
+    clearBefore();
+    clearAfter();
 }
 
 void Script::appendBefore(const QStringList& before)
@@ -350,15 +371,15 @@ ScriptType DetectFormat(QTextStream &in)
     in.seek(0);
 
     QString str = in.read(5120);
-    if (str.contains(QRegExp("ScriptType *: *v4\\.00\\+")))
+    if (str.contains(QRegularExpression("ScriptType *: *v4\\.00\\+")))
     {
         return SCR_ASS;
     }
-    else if (str.contains(QRegExp("ScriptType *: *v4\\.00")))
+    else if (str.contains(QRegularExpression("ScriptType *: *v4\\.00")))
     {
         return SCR_SSA;
     }
-    else if (str.contains(QRegExp("\\d{2}:\\d{2}:\\d{2},\\d{3} *--> *\\d{2}:\\d{2}:\\d{2},\\d{3}")))
+    else if (str.contains(QRegularExpression("\\d{2}:\\d{2}:\\d{2},\\d{3} *--> *\\d{2}:\\d{2}:\\d{2},\\d{3}")))
     {
         return SCR_SRT;
     }
@@ -374,8 +395,8 @@ bool ParseSSA(QTextStream& in, Script& script)
     in.seek(0);
 
     // Регулярка для определения секции
-    QRegExp reSection("^\\[([^\\]]+)\\]$");
-    reSection.setMinimal(true);
+    QRegularExpression reSection("^\\[([^\\]]+?)\\]$");
+    QRegularExpressionMatch match;
 
     // Таблица состояний
     QHash<QString, SectionType> sectionTable;
@@ -425,9 +446,9 @@ bool ParseSSA(QTextStream& in, Script& script)
         // Вне секций
         case SEC_UNKNOWN:
             // Нашли заголовок
-            if ( reSection.indexIn(line) != -1 )
+            if ((match = reSection.match(line)).hasMatch())
             {
-                tempStr = reSection.cap(1).trimmed().toLower();
+                tempStr = match.captured(1).trimmed().toLower();
 
                 // Есть ли такой заголовок в таблице?
                 st_it = sectionTable.find(tempStr);
@@ -453,10 +474,11 @@ bool ParseSSA(QTextStream& in, Script& script)
             }
 
             // Спасаем неизвестное
-            if (SEC_UNKNOWN == state)
+            //! @todo: временно отключено - мусор ломает формат
+            /*if (SEC_UNKNOWN == state)
             {
                 tempStrList.append(line);
-            }
+            }*/
             break;
 
         case SEC_HEADER:
@@ -466,7 +488,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                 tempStrList.append(line);
             }
             // Началась другая секция
-            else if ( -1 != reSection.indexIn(line) )
+            else if (reSection.match(line).hasMatch())
             {
                 script.header.appendAfter(tempStrList);
                 tempStrList.clear();
@@ -507,7 +529,7 @@ bool ParseSSA(QTextStream& in, Script& script)
 
         case SEC_STYLES:
             // Началась другая секция
-            if ( -1 != reSection.indexIn(line) )
+            if (reSection.match(line).hasMatch())
             {
                 script.styles.appendAfter(tempStrList);
                 tempStrList.clear();
@@ -761,7 +783,7 @@ bool ParseSSA(QTextStream& in, Script& script)
 
         case SEC_EVENTS:
             // Началась другая секция
-            if ( -1 != reSection.indexIn(line) )
+            if (reSection.match(line).hasMatch())
             {
                 script.events.appendAfter(tempStrList);
                 tempStrList.clear();
@@ -788,7 +810,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                     // Layer
                     if (!tempList.isEmpty())
                     {
-                        ptr->layer = tempList.first().remove(QRegExp("\\D")).toUInt();
+                        ptr->layer = tempList.first().remove(QRegularExpression("\\D")).toUInt();
                         tempList.removeFirst();
                     }
 
@@ -873,7 +895,7 @@ bool ParseSSA(QTextStream& in, Script& script)
 
         case SEC_FONTS:
             // Началась другая секция
-            if ( -1 != reSection.indexIn(line) )
+            if (reSection.match(line).hasMatch())
             {
                 readNext = false;
                 state = SEC_UNKNOWN;
@@ -887,7 +909,7 @@ bool ParseSSA(QTextStream& in, Script& script)
 
         case SEC_GRAPHICS:
             // Началась другая секция
-            if ( -1 != reSection.indexIn(line) )
+            if (reSection.match(line).hasMatch())
             {
                 readNext = false;
                 state = SEC_UNKNOWN;
@@ -922,8 +944,8 @@ bool ParseSRT(QTextStream& in, Script& script)
     // Идея: можно просто разбить файл, используя два перевода строки (и номер, и время) - медленно
 
     // Регулярка для определения секции
-    QRegExp reTime("^(\\d{2}:\\d{2}:\\d{2},\\d{3}) *--> *(\\d{2}:\\d{2}:\\d{2},\\d{3})$");
-    reTime.setMinimal(true);
+    QRegularExpression reTime("^(\\d{2}:\\d{2}:\\d{2},\\d{3}) *--> *(\\d{2}:\\d{2}:\\d{2},\\d{3})$");
+    QRegularExpressionMatch match;
 
     QString line;
     QStringList tempList;
@@ -959,12 +981,12 @@ bool ParseSRT(QTextStream& in, Script& script)
             {
                 return false;
             }
-            else if ( reTime.indexIn(line) != -1 )
+            else if ((match = reTime.match(line)).hasMatch())
             {
                 state = SRTST_TEXT;
 
-                start = Line::StrToTime(reTime.cap(1), SCR_SRT);
-                end = Line::StrToTime(reTime.cap(2), SCR_SRT);
+                start = Line::StrToTime(match.captured(1), SCR_SRT);
+                end   = Line::StrToTime(match.captured(2), SCR_SRT);
             }
             else
             {
