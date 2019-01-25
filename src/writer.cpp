@@ -5,6 +5,7 @@
 #include <QTextDocument>
 #include <QTextCursor>
 #include <QPrinter>
+#include <QRegularExpression>
 
 namespace Writer
 {
@@ -42,16 +43,16 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
 PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
 {
     const QString emptyActor = "[не размечено]";
-    const QRegExp endLineTag("\\\\n", Qt::CaseInsensitive), assTags("\\{[^\\}]*\\}", Qt::CaseInsensitive);
+    const QRegularExpression assTags("\\{[^\\}]*?\\}");
 
     PhraseList result;
     Phrase phrase;
     QString actor, text;
     bool first = true;
-    foreach (const Script::Line::Event* event, script.events.content)
+    for (const Script::Line::Event* const event : qAsConst(script.events.content))
     {
         actor = event->actorName.isEmpty() ? emptyActor : event->actorName; // Already trimmed
-        text  = event->text.trimmed().replace(endLineTag, " ").replace(assTags, QString::null);
+        text  = event->text.trimmed().replace("\\N", " ", Qt::CaseInsensitive).replace(assTags, QString::null);
 
         // Если интервал указан, фраза не первая, актёр совпадает и расстояние между фразами не более 5 сек.
         if (!first &&
@@ -83,7 +84,7 @@ PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
 
 bool SaveSV(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator)
 {
-    PhraseList phrases = PreparePhrases(script, joinInterval);
+    const PhraseList phrases = PreparePhrases(script, joinInterval);
 
     // const int width = QString::number(rows.size()).size();
     // QMap<QString, uint> counters;
@@ -92,7 +93,7 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
     QString prevActor;
     QStringList line;
     QString result;
-    foreach (const Phrase& phrase, phrases)
+    for (const Phrase& phrase : phrases)
     {
         if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
         {
@@ -143,7 +144,7 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
 
 void SavePDF(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
 {
-    PhraseList phrases = PreparePhrases(script, joinInterval);
+    const PhraseList phrases = PreparePhrases(script, joinInterval);
 
     QTextDocument document;
     document.setDefaultFont(QFont("Helvetica", 14));
@@ -153,7 +154,7 @@ void SavePDF(const Script::Script& script, const QString& fileName, const QStrin
     // QMap<QString, uint> counters;
     // uint counter;
     bool first = true;
-    foreach (const Phrase& phrase, phrases)
+    for (const Phrase& phrase : phrases)
     {
         if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
         {

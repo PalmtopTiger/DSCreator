@@ -80,7 +80,7 @@ void MainWindow::on_btOpenSubtitles_clicked()
 
 void MainWindow::on_btSaveCSV_clicked()
 {
-    QStringList actors   = getCheckedActors();
+    const QStringList actors = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
     if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".csv");
@@ -105,7 +105,7 @@ void MainWindow::on_btSaveCSV_clicked()
 
 void MainWindow::on_btSaveTSV_clicked()
 {
-    QStringList actors   = getCheckedActors();
+    const QStringList actors = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
     if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".tsv");
@@ -130,7 +130,7 @@ void MainWindow::on_btSaveTSV_clicked()
 
 void MainWindow::on_btSavePDF_clicked()
 {
-    QStringList actors   = getCheckedActors();
+    const QStringList actors = getCheckedActors();
     QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
     if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
     templateName.append(".pdf");
@@ -155,7 +155,7 @@ void MainWindow::on_btSavePDF_clicked()
 //
 QString UrlToPath(const QUrl &url)
 {
-    QString path = url.toLocalFile();
+    const QString path = url.toLocalFile();
     if (!path.isEmpty() && FILETYPES.contains(QFileInfo(path).suffix(), Qt::CaseInsensitive)) return path;
 
     return QString::null;
@@ -166,7 +166,7 @@ void MainWindow::updateActors()
     ui->lstActors->clear();
 
     QSet<QString> uniqueActors;
-    foreach (const Script::Line::Event* event, _script.events.content)
+    for (const Script::Line::Event* const event : qAsConst(_script.events.content))
     {
         uniqueActors.insert(event->actorName); // Already trimmed
     }
@@ -174,7 +174,7 @@ void MainWindow::updateActors()
     QStringList actors = uniqueActors.values();
     actors.sort();
 
-    foreach (const QString& actor, actors)
+    for (const QString& actor : qAsConst(actors))
     {
         QListWidgetItem* item = new QListWidgetItem(actor, ui->lstActors);
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
