@@ -56,10 +56,10 @@ void MainWindow::dropEvent(QDropEvent *event)
 {
     if (event->mimeData()->hasUrls())
     {
-        const QString fileName = UrlToPath(event->mimeData()->urls().first());
-        if (!fileName.isEmpty())
+        const QString path = UrlToPath(event->mimeData()->urls().first());
+        if (!path.isEmpty())
         {
-            this->open(fileName);
+            this->open(path);
         }
     }
 }
@@ -156,7 +156,11 @@ void MainWindow::on_btSavePDF_clicked()
 QString UrlToPath(const QUrl &url)
 {
     const QString path = url.toLocalFile();
-    if (!path.isEmpty() && FILETYPES.contains(QFileInfo(path).suffix(), Qt::CaseInsensitive)) return path;
+
+    if (!path.isEmpty() && FILETYPES.contains(QFileInfo(path).suffix(), Qt::CaseInsensitive))
+    {
+        return path;
+    }
 
     return QString::null;
 }
