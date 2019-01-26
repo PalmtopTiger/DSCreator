@@ -14,7 +14,7 @@ const QString DEFAULT_DIR_KEY = "DefaultDir";
 const QString FPS_KEY = "FPS";
 const QString TIME_START_KEY = "TimeStart";
 const QString JOIN_INTERVAL_KEY = "JoinInterval";
-const QStringList FILETYPES = QStringList() << "ass" << "ssa" << "srt";
+const QStringList FILETYPES = {"ass", "ssa", "srt"};
 const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
 
 
