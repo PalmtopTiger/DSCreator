@@ -15,7 +15,7 @@ const QString FPS_KEY = "FPS";
 const QString TIME_START_KEY = "TimeStart";
 const QString JOIN_INTERVAL_KEY = "JoinInterval";
 const QStringList FILETYPES = {"ass", "ssa", "srt"};
-const QString FILETYPES_FILTER = "Субтитры (*." + FILETYPES.join(" *.") + ")";
+const QString FILETYPES_FILTER = QString("Субтитры (*.%1)").arg(FILETYPES.join(" *."));
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -62,7 +62,8 @@ void MainWindow::dropEvent(QDropEvent *event)
         const QString path = UrlToPath(event->mimeData()->urls().first());
         if (!path.isEmpty())
         {
-            this->open(path);
+            this->openFile(path);
+            event->acceptProposedAction();
         }
     }
 }
@@ -78,7 +79,7 @@ void MainWindow::on_btOpenSubtitles_clicked()
 
     _settings.setValue(DEFAULT_DIR_KEY, QFileInfo(fileName).absolutePath());
 
-    this->open(fileName);
+    this->openFile(fileName);
 }
 
 void MainWindow::on_btSaveCSV_clicked()
@@ -198,7 +199,7 @@ int MainWindow::getTimeStart() const
     return ui->cbNegativeTimeStart->isChecked() ? -timeStart : timeStart;
 }
 
-void MainWindow::open(const QString &fileName)
+void MainWindow::openFile(const QString &fileName)
 {
     // Очистка
     ui->btSaveCSV->setEnabled(false);

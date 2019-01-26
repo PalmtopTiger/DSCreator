@@ -38,7 +38,7 @@ private:
     QStringList getCheckedActors() const;
     QString getSaveFileName(const QStringList& actors, const QString& suffix);
     int getTimeStart() const;
-    void open(const QString &fileName);
+    void openFile(const QString &fileName);
 };
 
 #endif // MAINWINDOW_H
