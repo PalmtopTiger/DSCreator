@@ -8,6 +8,7 @@
 namespace Writer
 {
 const QChar SEP_CSV = ';', SEP_TSV = '\t';
+const QString ACTOR_EMPTY = "[не размечено]";
 
 struct Phrase
 {

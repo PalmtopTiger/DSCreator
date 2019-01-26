@@ -83,15 +83,8 @@ void MainWindow::on_btOpenSubtitles_clicked()
 
 void MainWindow::on_btSaveCSV_clicked()
 {
-    const QStringList actors = getCheckedActors();
-    QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
-    templateName.append(".csv");
-
-    const QString fileName = QFileDialog::getSaveFileName(this,
-                                                          "Выберите файл",
-                                                          QDir(templateName).path(),
-                                                          "CSV (*.csv)");
+    const QStringList actors = this->getCheckedActors();
+    const QString fileName   = this->getSaveFileName(actors, "csv");
     if (fileName.isEmpty()) return;
 
     if (Writer::SaveSV(_script,
@@ -108,15 +101,8 @@ void MainWindow::on_btSaveCSV_clicked()
 
 void MainWindow::on_btSaveTSV_clicked()
 {
-    const QStringList actors = getCheckedActors();
-    QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
-    templateName.append(".tsv");
-
-    const QString fileName = QFileDialog::getSaveFileName(this,
-                                                          "Выберите файл",
-                                                          QDir(templateName).path(),
-                                                          "TSV (*.tsv)");
+    const QStringList actors = this->getCheckedActors();
+    const QString fileName   = this->getSaveFileName(actors, "tsv");
     if (fileName.isEmpty()) return;
 
     if (Writer::SaveSV(_script,
@@ -133,15 +119,8 @@ void MainWindow::on_btSaveTSV_clicked()
 
 void MainWindow::on_btSavePDF_clicked()
 {
-    const QStringList actors = getCheckedActors();
-    QString templateName = _fileInfo.path() + QDir::separator() + _fileInfo.baseName();
-    if (!actors.isEmpty()) templateName.append(" (" + actors.join(",") + ')');
-    templateName.append(".pdf");
-
-    const QString fileName = QFileDialog::getSaveFileName(this,
-                                                          "Выберите файл",
-                                                          QDir(templateName).path(),
-                                                          "PDF (*.pdf)");
+    const QStringList actors = this->getCheckedActors();
+    const QString fileName   = this->getSaveFileName(actors, "pdf");
     if (fileName.isEmpty()) return;
 
     Writer::SavePDF(_script,
@@ -175,7 +154,7 @@ void MainWindow::updateActors()
     QSet<QString> uniqueActors;
     for (const Script::Line::Event* const event : qAsConst(_script.events.content))
     {
-        uniqueActors.insert(event->actorName); // Already trimmed
+        uniqueActors.insert(event->actorName.isEmpty() ? Writer::ACTOR_EMPTY : event->actorName); // Already trimmed
     }
 
     QStringList actors = uniqueActors.values();
@@ -198,6 +177,18 @@ QStringList MainWindow::getCheckedActors() const
         if (Qt::Checked == item->checkState()) actors.append(item->text());
     }
     return actors;
+}
+
+QString MainWindow::getSaveFileName(const QStringList& actors, const QString& suffix)
+{
+    QString fileName = _fileInfo.completeBaseName();
+    if (!actors.isEmpty()) fileName.append(QString(" (%1)").arg(actors.join(',')));
+    fileName.append(QString(".%1").arg(suffix));
+
+    return QFileDialog::getSaveFileName(this,
+                                        "Выберите файл",
+                                        _fileInfo.dir().filePath(fileName),
+                                        QString("%1 (*.%2)").arg(suffix.toUpper()).arg(suffix));
 }
 
 int MainWindow::getTimeStart() const

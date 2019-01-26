@@ -42,7 +42,6 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
 // Удаляет теги из текста фраз и объединяет соседние
 PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
 {
-    const QString emptyActor = "[не размечено]";
     const QRegularExpression assTags("\\{[^\\}]*?\\}");
 
     PhraseList result;
@@ -51,7 +50,7 @@ PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
     bool first = true;
     for (const Script::Line::Event* const event : qAsConst(script.events.content))
     {
-        actor = event->actorName.isEmpty() ? emptyActor : event->actorName; // Already trimmed
+        actor = event->actorName.isEmpty() ? ACTOR_EMPTY : event->actorName; // Already trimmed
         text  = event->text.trimmed().replace("\\N", " ", Qt::CaseInsensitive).replace(assTags, QString::null);
 
         // Если интервал указан, фраза не первая, актёр совпадает и расстояние между фразами не более 5 сек.

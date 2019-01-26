@@ -36,6 +36,7 @@ private:
     void dropEvent(QDropEvent *event);
     void updateActors();
     QStringList getCheckedActors() const;
+    QString getSaveFileName(const QStringList& actors, const QString& suffix);
     int getTimeStart() const;
     void open(const QString &fileName);
 };
