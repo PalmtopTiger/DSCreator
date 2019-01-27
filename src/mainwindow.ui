@@ -19,7 +19,11 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QListWidget" name="lstActors"/>
+     <widget class="QListWidget" name="lsActors">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+     </widget>
     </item>
     <item>
      <layout class="QFormLayout" name="loSettings">

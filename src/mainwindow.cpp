@@ -10,12 +10,12 @@
 
 QString UrlToPath(const QUrl &url);
 
-const QString DEFAULT_DIR_KEY = "DefaultDir";
-const QString FPS_KEY = "FPS";
-const QString TIME_START_KEY = "TimeStart";
-const QString JOIN_INTERVAL_KEY = "JoinInterval";
 const QStringList FILETYPES = {"ass", "ssa", "srt"};
-const QString FILETYPES_FILTER = QString("Субтитры (*.%1)").arg(FILETYPES.join(" *."));
+const QString FILETYPES_FILTER  = QString("Субтитры (*.%1)").arg(FILETYPES.join(" *.")),
+              DEFAULT_DIR_KEY   = "DefaultDir",
+              FPS_KEY           = "FPS",
+              TIME_START_KEY    = "TimeStart",
+              JOIN_INTERVAL_KEY = "JoinInterval";
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -132,6 +132,12 @@ void MainWindow::on_btSavePDF_clicked()
                     ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
+void MainWindow::on_lsActors_itemClicked(QListWidgetItem* item)
+{
+    if (nullptr == item) return;
+    item->setCheckState(Qt::Checked == item->checkState() ? Qt::Unchecked : Qt::Checked);
+}
+
 
 //
 // Функции
@@ -149,7 +155,7 @@ QString UrlToPath(const QUrl &url)
 
 void MainWindow::updateActors()
 {
-    ui->lstActors->clear();
+    ui->lsActors->clear();
 
     QSet<QString> uniqueActors;
     for (const Script::Line::Event* const event : qAsConst(_script.events.content))
@@ -162,8 +168,8 @@ void MainWindow::updateActors()
 
     for (const QString& actor : qAsConst(actors))
     {
-        QListWidgetItem* item = new QListWidgetItem(actor, ui->lstActors);
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+        QListWidgetItem* const item = new QListWidgetItem(actor, ui->lsActors);
+        item->setFlags(item->flags() & (~Qt::ItemIsUserCheckable));
         item->setCheckState(Qt::Unchecked);
     }
 }
@@ -171,9 +177,9 @@ void MainWindow::updateActors()
 QStringList MainWindow::getCheckedActors() const
 {
     QStringList actors;
-    for (int i = 0; i < ui->lstActors->count(); ++i)
+    for (int i = 0; i < ui->lsActors->count(); ++i)
     {
-        const QListWidgetItem* const item = ui->lstActors->item(i);
+        const QListWidgetItem* const item = ui->lsActors->item(i);
         if (Qt::Checked == item->checkState()) actors.append(item->text());
     }
     return actors;
@@ -201,6 +207,7 @@ int MainWindow::getTimeStart() const
 void MainWindow::openFile(const QString &fileName)
 {
     // Очистка
+    ui->lsActors->setEnabled(false);
     ui->btSaveCSV->setEnabled(false);
     ui->btSaveTSV->setEnabled(false);
     ui->btSavePDF->setEnabled(false);
@@ -246,16 +253,13 @@ void MainWindow::openFile(const QString &fileName)
 
     if (_script.events.content.isEmpty())
     {
-        ui->lstActors->clear();
-        ui->btSaveCSV->setEnabled(false);
-        ui->btSaveTSV->setEnabled(false);
-        ui->btSavePDF->setEnabled(false);
-
+        ui->lsActors->clear();
         QMessageBox::warning(this, "Сообщение", "В субтитрах нет фраз");
     }
     else
     {
         this->updateActors();
+        ui->lsActors->setEnabled(true);
         ui->btSaveCSV->setEnabled(true);
         ui->btSaveTSV->setEnabled(true);
         ui->btSavePDF->setEnabled(true);
