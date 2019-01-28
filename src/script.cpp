@@ -94,6 +94,13 @@ QString TimeToStr(const uint time, const ScriptType type)
 }
 
 // Базовая строка
+Base::Base()
+{}
+
+Base::Base(const QString& value) :
+    _value(value)
+{}
+
 QString Base::generate(const ScriptType type) const
 {
     Q_UNUSED(type);
@@ -101,6 +108,15 @@ QString Base::generate(const ScriptType type) const
 }
 
 // Простейшая строка с двоеточием
+Named::Named(const QString& name) :
+    _name(name)
+{}
+
+Named::Named(const QString& name, const QStringList& before) :
+    _name(name),
+    _before(before)
+{}
+
 void Named::clearBefore()
 {
     _before.clear();
@@ -138,6 +154,18 @@ QString Named::generate(const ScriptType type) const
 }
 
 // Строка стиля
+Style::Style() :
+    Named("Style")
+{
+    this->init();
+}
+
+Style::Style(const QStringList& before) :
+    Named("Style", before)
+{
+    this->init();
+}
+
 void Style::init()
 {
     styleName       = defaultStyle;
@@ -236,6 +264,18 @@ QString Style::generate(const ScriptType type) const
 }
 
 // Строка события
+Event::Event() :
+    Named("Dialogue")
+{
+    this->init();
+}
+
+Event::Event(const QStringList& before) :
+    Named("Dialogue", before)
+{
+    this->init();
+}
+
 void Event::init()
 {
     layer   = 0;
@@ -287,6 +327,14 @@ QString Event::generate(const ScriptType type) const
 }
 
 // Скрипт
+Script::Script() :
+    header(SEC_HEADER),
+    styles(SEC_STYLES),
+    events(SEC_EVENTS),
+    fonts(SEC_FONTS),
+    graphics(SEC_GRAPHICS)
+{}
+
 void Script::clearBefore()
 {
     _before.clear();

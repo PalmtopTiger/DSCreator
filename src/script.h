@@ -34,14 +34,12 @@ const QString defaultFont = "Arial";
 uint StrToTime(const QString& str, const ScriptType type);
 QString TimeToStr(const uint time, const ScriptType type);
 
-// Базовый класс
+// Базовая строка
 class Base
 {
 public:
-    Base() {}
-    Base(const QString& value) :
-        _value(value)
-    {}
+    Base();
+    Base(const QString& value);
 
     QString generate(const ScriptType type) const;
 
@@ -55,14 +53,8 @@ class Named : public Base
 public:
     QString text;
 
-    Named(const QString& name) :
-        _name(name)
-    {}
-    Named(const QString& name,
-          const QStringList& before) :
-        _name(name),
-        _before(before)
-    {}
+    Named(const QString& name);
+    Named(const QString& name, const QStringList& before);
 
     void clearBefore();
     QString name() const;
@@ -103,16 +95,8 @@ public:
     ushort    marginV;
     ushort    encoding;
 
-    Style() :
-        Named("Style")
-    {
-        this->init();
-    }
-    Style(const QStringList& before) :
-        Named("Style", before)
-    {
-        this->init();
-    }
+    Style();
+    Style(const QStringList& before);
 
     QString generate(const ScriptType type) const;
 
@@ -134,16 +118,8 @@ public:
     ushort      marginV;
     QString     effect;
 
-    Event() :
-        Named("Dialogue")
-    {
-        this->init();
-    }
-    Event(const QStringList& before) :
-        Named("Dialogue", before)
-    {
-        this->init();
-    }
+    Event();
+    Event(const QStringList& before);
 
     QString generate(const ScriptType type) const;
 
@@ -297,13 +273,7 @@ private:
 class Script
 {
 public:
-    Script() :
-        header(SEC_HEADER),
-        styles(SEC_STYLES),
-        events(SEC_EVENTS),
-        fonts(SEC_FONTS),
-        graphics(SEC_GRAPHICS)
-    {}
+    Script();
 
     Section<Line::Named>  header;
     Section<Line::Style>  styles;
