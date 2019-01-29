@@ -1,7 +1,10 @@
 #ifndef SCRIPT_H
 #define SCRIPT_H
 
+#include <QVector>
 #include <QList>
+#include <QString>
+#include <QStringList>
 #include <QTextStream>
 
 

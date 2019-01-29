@@ -1,5 +1,6 @@
 #include "writer.h"
 #include <QtMath>
+//#include <QMap>
 #include <QTextCodec>
 #include <QTextDocument>
 #include <QTextCursor>
