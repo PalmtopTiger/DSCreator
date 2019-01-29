@@ -1,7 +1,7 @@
 /*******************************************************************************
  * This file is part of Re_Sync Next.
  *
- * Copyright (C) 2011-2013  Andrey Efremov <duxus@yandex.ru>
+ * Copyright (C) 2011-2019  Andrey Efremov <duxus@yandex.ru>
  *
  * Re_Sync is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
