@@ -2,8 +2,6 @@
 #define WRITER_H
 
 #include "script.h"
-#include <QList>
-#include <QString>
 
 namespace Writer
 {

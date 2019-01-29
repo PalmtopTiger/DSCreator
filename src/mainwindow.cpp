@@ -2,11 +2,9 @@
 #include "ui_mainwindow.h"
 #include "writer.h"
 #include <QDesktopWidget>
-#include <QDragEnterEvent>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMimeData>
-#include <QUrl>
 
 QString UrlToPath(const QUrl &url);
 

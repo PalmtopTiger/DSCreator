@@ -18,7 +18,6 @@
  ******************************************************************************/
 
 #include "script.h"
-#include <QHash>
 #include <QRegularExpression>
 
 
