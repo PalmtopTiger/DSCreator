@@ -25,7 +25,7 @@ private slots:
     void on_btSaveCSV_clicked();
     void on_btSaveTSV_clicked();
     void on_btSavePDF_clicked();
-    void on_lsActors_itemClicked(QListWidgetItem* item);
+//    void on_lsActors_itemClicked(QListWidgetItem* item);
 
 private:
     Ui::MainWindow *ui;

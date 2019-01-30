@@ -132,11 +132,11 @@ void MainWindow::on_btSavePDF_clicked()
                     ui->edJoinInterval->time().msecsSinceStartOfDay());
 }
 
-void MainWindow::on_lsActors_itemClicked(QListWidgetItem* item)
+/*void MainWindow::on_lsActors_itemClicked(QListWidgetItem* item)
 {
     if (nullptr == item) return;
     item->setCheckState(Qt::Checked == item->checkState() ? Qt::Unchecked : Qt::Checked);
-}
+}*/
 
 
 //
@@ -169,7 +169,7 @@ void MainWindow::updateActors()
     for (const QString& actor : qAsConst(actors))
     {
         QListWidgetItem* const item = new QListWidgetItem(actor, ui->lsActors);
-        item->setFlags(item->flags() & (~Qt::ItemIsUserCheckable));
+//        item->setFlags(item->flags() & (~Qt::ItemIsUserCheckable));
         item->setCheckState(Qt::Unchecked);
     }
 }
