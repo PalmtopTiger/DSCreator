@@ -4,7 +4,8 @@
 #include <QTextCodec>
 #include <QTextDocument>
 #include <QTextCursor>
-#include <QPrinter>
+#include <QTextTable>
+//#include <QPrinter>
 #include <QRegularExpression>
 
 namespace Writer
@@ -39,8 +40,8 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
             .arg(qFloor(static_cast<double>(msec) * fps / 1000.0), 2, 10, fillChar);
 }
 
-// Удаляет теги из текста фраз и объединяет соседние
-PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
+// Удаляет теги из текста фраз, объединяет соседние и фильтрует по актёрам
+PhraseList PreparePhrases(const Script::Script& script, const QStringList& actors, const int joinInterval)
 {
     const QRegularExpression assTags("\\{[^\\}]*?\\}");
 
@@ -78,12 +79,21 @@ PhraseList PreparePhrases(const Script::Script& script, const int joinInterval)
     }
     if (!first) result.append(phrase);
 
+    if (!actors.isEmpty())
+    {
+        auto toRemove = [actors](const Phrase& phrase) {
+            return !actors.contains(phrase.actor, Qt::CaseInsensitive);
+        };
+        result.erase(std::remove_if(result.begin(), result.end(), toRemove),
+                     result.end());
+    }
+
     return result;
 }
 
 bool SaveSV(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QChar separator)
 {
-    const PhraseList phrases = PreparePhrases(script, joinInterval);
+    const PhraseList phrases = PreparePhrases(script, actors, joinInterval);
 
     // const int width = QString::number(rows.size()).size();
     // QMap<QString, uint> counters;
@@ -94,43 +104,40 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
     QString result;
     for (const Phrase& phrase : phrases)
     {
-        if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
+        // counter = counters.value(row->actor, 0) + 1;
+        // counters[row->actor] = counter;
+        // id = QString("%1%2").arg(row->actor).arg(counter, width, 10, QChar('0'));
+
+        if (separator == SEP_CSV)
         {
-            // counter = counters.value(row->actor, 0) + 1;
-            // counters[row->actor] = counter;
-            // id = QString("%1%2").arg(row->actor).arg(counter, width, 10, QChar('0'));
-
-            if (separator == SEP_CSV)
-            {
-                line.append( TimeToPT(phrase.start, fps, timeStart) );
-                line.append( TimeToPT(phrase.end, fps, timeStart) );
-                line.append( phrase.actor != prevActor ? phrase.actor : QString::null );
-                line.append( phrase.text );
-            }
-            else if (separator == SEP_TSV)
-            {
-                line.append( phrase.actor );
-                line.append( TimeToPT(phrase.start, fps, timeStart) );
-            }
-
-            for (QStringList::iterator str = line.begin(); str != line.end(); ++str)
-            {
-                if ( str->contains(separator) )
-                {
-                    (*str) = QString("\"%1\"").arg( str->replace(QChar('"'), "\"\"") );
-                }
-            }
-
-            result.append( line.join(separator) );
-            result.append( "\n" );
-            line.clear();
-
-            prevActor = phrase.actor;
+            line.append( TimeToPT(phrase.start, fps, timeStart) );
+            line.append( TimeToPT(phrase.end, fps, timeStart) );
+            line.append( phrase.actor != prevActor ? phrase.actor : QString::null );
+            line.append( phrase.text );
         }
+        else if (separator == SEP_TSV)
+        {
+            line.append( phrase.actor );
+            line.append( TimeToPT(phrase.start, fps, timeStart) );
+        }
+
+        for (QStringList::iterator str = line.begin(); str != line.end(); ++str)
+        {
+            if ( str->contains(separator) )
+            {
+                (*str) = QString("\"%1\"").arg( str->replace(QChar('"'), "\"\"") );
+            }
+        }
+
+        result.append( line.join(separator) );
+        result.append( "\n" );
+        line.clear();
+
+        prevActor = phrase.actor;
     }
 
     QFile fout(fileName);
-    if (!fout.open(QFile::WriteOnly | QFile::Text)) return true;
+    if (!fout.open(QFile::WriteOnly | QFile::Text)) return false;
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
@@ -138,15 +145,19 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
     out << result;
 
     fout.close();
-    return false;
+    return true;
 }
 
-void SavePDF(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
+/*void SavePDF(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
 {
-    const PhraseList phrases = PreparePhrases(script, joinInterval);
+    const PhraseList phrases = PreparePhrases(script, actors, joinInterval);
 
     QTextDocument document;
-    document.setDefaultFont(QFont("Helvetica", 14));
+    QFont font = document.defaultFont();
+    font.setStyleHint(QFont::SansSerif);
+    font.setFamily("Helvetica");
+    font.setPointSize(14);
+    document.setDefaultFont(font);
     QTextCursor cursor(&document);
 
     // const int width = QString::number(_rows.size()).size();
@@ -155,25 +166,22 @@ void SavePDF(const Script::Script& script, const QString& fileName, const QStrin
     bool first = true;
     for (const Phrase& phrase : phrases)
     {
-        if ( actors.isEmpty() || actors.contains(phrase.actor, Qt::CaseInsensitive) )
+        // counter = counters.value(row->actor, 0) + 1;
+        // counters[row->actor] = counter;
+        // .arg(counter, width, 10, QChar('0'))
+
+        if (!first)
         {
-            // counter = counters.value(row->actor, 0) + 1;
-            // counters[row->actor] = counter;
-            // .arg(counter, width, 10, QChar('0'))
-
-            if (!first)
-            {
-                cursor.insertBlock();
-                cursor.insertBlock();
-            }
-
-            cursor.insertHtml( QString("<b>%1</b> %2<br/>%3")
-                               .arg(phrase.actor)
-                               .arg(TimeToPT(phrase.start, fps, timeStart))
-                               .arg(phrase.text) );
-
-            first = false;
+            cursor.insertBlock();
+            cursor.insertBlock();
         }
+
+        cursor.insertHtml( QString("<b>%1</b> %2<br/>%3")
+                           .arg(phrase.actor)
+                           .arg(TimeToPT(phrase.start, fps, timeStart))
+                           .arg(phrase.text) );
+
+        first = false;
     }
 
     QPrinter printer(QPrinter::HighResolution);
@@ -181,5 +189,53 @@ void SavePDF(const Script::Script& script, const QString& fileName, const QStrin
     printer.setPaperSize(QPrinter::A4);
     printer.setOutputFileName(fileName);
     document.print(&printer);
+}*/
+
+bool SaveHTML(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
+{
+    const PhraseList phrases = PreparePhrases(script, actors, joinInterval);
+
+    QTextDocument document;
+    QFont font = document.defaultFont();
+    font.setStyleHint(QFont::SansSerif);
+    font.setFamily("Arial");
+    font.setPointSize(10);
+    document.setDefaultFont(font);
+    QTextCursor cursor(&document);
+
+    QTextTableFormat tableFormat;
+    tableFormat.setCellSpacing(0);
+    tableFormat.setCellPadding(5.0);
+
+    QTextTable* table = cursor.insertTable(phrases.size() + 1, 3, tableFormat);
+    table->cellAt(0, 0).firstCursorPosition().insertText("Актёры");
+    table->mergeCells(0, 0, 1, 3);
+
+    for (int i = 0; i < phrases.size(); ++i)
+    {
+        const Phrase& phrase = phrases.at(i);
+        const int row = i + 1;
+
+        table->cellAt(row, 0).firstCursorPosition().insertText(TimeToPT(phrase.start, fps, timeStart));
+        table->cellAt(row, 1).firstCursorPosition().insertText(phrase.actor);
+        table->cellAt(row, 2).firstCursorPosition().insertText(phrase.text);
+    }
+
+    QString html = document.toHtml();
+    html.insert(html.indexOf("</style>"),
+                "table { font: 10pt Arial, Helvetica, sans-serif; border-collapse: collapse; }\n"
+                "table, td { border: 1px solid black; }\n"
+                "td { vertical-align: bottom; }\n");
+
+    QFile fout(fileName);
+    if (!fout.open(QFile::WriteOnly | QFile::Text)) return false;
+
+    QTextStream out(&fout);
+    out.setCodec( QTextCodec::codecForName("UTF-8") );
+    out.setGenerateByteOrderMark(true);
+    out << html;
+
+    fout.close();
+    return true;
 }
 }

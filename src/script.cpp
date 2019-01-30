@@ -1094,21 +1094,18 @@ bool ParseSRT(QTextStream& in, Script& script)
     return true;
 }
 
-bool GenerateSSA(QTextStream& out, const Script& script)
+void GenerateSSA(QTextStream& out, const Script& script)
 {
     out << script.generate(SCR_SSA);
-    return true;
 }
 
-bool GenerateASS(QTextStream& out, const Script& script)
+void GenerateASS(QTextStream& out, const Script& script)
 {
     out << script.generate(SCR_ASS);
-    return true;
 }
 
-bool GenerateSRT(QTextStream& out, const Script& script)
+void GenerateSRT(QTextStream& out, const Script& script)
 {
     out << script.generate(SCR_SRT);
-    return true;
 }
 }

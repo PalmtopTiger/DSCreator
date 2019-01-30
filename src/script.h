@@ -296,9 +296,9 @@ private:
 ScriptType DetectFormat(QTextStream& in);
 bool ParseSSA(QTextStream& in, Script& script);
 bool ParseSRT(QTextStream& in, Script& script);
-bool GenerateSSA(QTextStream& out, const Script& script);
-bool GenerateASS(QTextStream& out, const Script& script);
-bool GenerateSRT(QTextStream& out, const Script& script);
+void GenerateSSA(QTextStream& out, const Script& script);
+void GenerateASS(QTextStream& out, const Script& script);
+void GenerateSRT(QTextStream& out, const Script& script);
 }
 
 #endif // SCRIPT_H

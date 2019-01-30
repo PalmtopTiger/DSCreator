@@ -141,12 +141,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btSavePDF">
+       <widget class="QPushButton" name="btSaveHTML">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>💾 PDF</string>
+         <string>💾 HTML</string>
         </property>
        </widget>
       </item>

@@ -88,13 +88,13 @@ void MainWindow::on_btSaveCSV_clicked()
     const QString fileName   = this->getSaveFileName(actors, "csv");
     if (fileName.isEmpty()) return;
 
-    if (Writer::SaveSV(_script,
-                       fileName,
-                       actors,
-                       ui->edFPS->value(),
-                       this->getTimeStart(),
-                       ui->edJoinInterval->time().msecsSinceStartOfDay(),
-                       Writer::SEP_CSV))
+    if (!Writer::SaveSV(_script,
+                        fileName,
+                        actors,
+                        ui->edFPS->value(),
+                        this->getTimeStart(),
+                        ui->edJoinInterval->time().msecsSinceStartOfDay(),
+                        Writer::SEP_CSV))
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
     }
@@ -106,30 +106,33 @@ void MainWindow::on_btSaveTSV_clicked()
     const QString fileName   = this->getSaveFileName(actors, "tsv");
     if (fileName.isEmpty()) return;
 
-    if (Writer::SaveSV(_script,
-                       fileName,
-                       actors,
-                       ui->edFPS->value(),
-                       this->getTimeStart(),
-                       ui->edJoinInterval->time().msecsSinceStartOfDay(),
-                       Writer::SEP_TSV))
+    if (!Writer::SaveSV(_script,
+                        fileName,
+                        actors,
+                        ui->edFPS->value(),
+                        this->getTimeStart(),
+                        ui->edJoinInterval->time().msecsSinceStartOfDay(),
+                        Writer::SEP_TSV))
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
     }
 }
 
-void MainWindow::on_btSavePDF_clicked()
+void MainWindow::on_btSaveHTML_clicked()
 {
     const QStringList actors = this->getCheckedActors();
-    const QString fileName   = this->getSaveFileName(actors, "pdf");
+    const QString fileName   = this->getSaveFileName(actors, "html");
     if (fileName.isEmpty()) return;
 
-    Writer::SavePDF(_script,
-                    fileName,
-                    actors,
-                    ui->edFPS->value(),
-                    this->getTimeStart(),
-                    ui->edJoinInterval->time().msecsSinceStartOfDay());
+    if (!Writer::SaveHTML(_script,
+                          fileName,
+                          actors,
+                          ui->edFPS->value(),
+                          this->getTimeStart(),
+                          ui->edJoinInterval->time().msecsSinceStartOfDay()))
+    {
+        QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
+    }
 }
 
 /*void MainWindow::on_lsActors_itemClicked(QListWidgetItem* item)
@@ -210,7 +213,7 @@ void MainWindow::openFile(const QString &fileName)
     ui->lsActors->setEnabled(false);
     ui->btSaveCSV->setEnabled(false);
     ui->btSaveTSV->setEnabled(false);
-    ui->btSavePDF->setEnabled(false);
+    ui->btSaveHTML->setEnabled(false);
     _fileInfo.setFile(fileName);
     _script.clear();
 
@@ -262,6 +265,6 @@ void MainWindow::openFile(const QString &fileName)
         ui->lsActors->setEnabled(true);
         ui->btSaveCSV->setEnabled(true);
         ui->btSaveTSV->setEnabled(true);
-        ui->btSavePDF->setEnabled(true);
+        ui->btSaveHTML->setEnabled(true);
     }
 }
