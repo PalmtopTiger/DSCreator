@@ -31,7 +31,7 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
               msec = newTime % 1000;
 
     // Собираем строку (последний компонент - кадры)
-    const QChar fillChar = QChar('0');
+    const QChar fillChar = '0';
     return QString("%1%2:%3:%4:%5")
             .arg(negative ? QString("−") : QString::null)
             .arg(hour, 2, 10, fillChar)
@@ -121,12 +121,9 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
             line.append( TimeToPT(phrase.start, fps, timeStart) );
         }
 
-        for (QStringList::iterator str = line.begin(); str != line.end(); ++str)
+        for (QString& str : line)
         {
-            if ( str->contains(separator) )
-            {
-                (*str) = QString("\"%1\"").arg( str->replace(QChar('"'), "\"\"") );
-            }
+            str.replace('"', "\"\"").prepend('"').append('"');
         }
 
         result.append( line.join(separator) );
@@ -206,6 +203,12 @@ bool SaveHTML(const Script::Script& script, const QString& fileName, const QStri
     QTextTableFormat tableFormat;
     tableFormat.setCellSpacing(0);
     tableFormat.setCellPadding(5.0);
+    tableFormat.setWidth(QTextLength(QTextLength::PercentageLength, 100.0));
+    tableFormat.setColumnWidthConstraints({
+        QTextLength(QTextLength::PercentageLength, 1.0),
+        QTextLength(QTextLength::PercentageLength, 1.0),
+        QTextLength(QTextLength::PercentageLength, 98.0)
+    });
 
     QTextTable* table = cursor.insertTable(phrases.size() + 1, 3, tableFormat);
     table->cellAt(0, 0).firstCursorPosition().insertText("Актёры");
@@ -221,9 +224,10 @@ bool SaveHTML(const Script::Script& script, const QString& fileName, const QStri
         table->cellAt(row, 2).firstCursorPosition().insertText(phrase.text);
     }
 
-    QString html = document.toHtml();
+    QString html = document.toHtml("utf-8");
     html.insert(html.indexOf("</style>"),
-                "table { font: 10pt Arial, Helvetica, sans-serif; border-collapse: collapse; }\n"
+                "body { font: 10pt Arial, Helvetica, sans-serif; }\n"
+                "table { border-collapse: collapse; }\n"
                 "table, td { border: 1px solid black; }\n"
                 "td { vertical-align: bottom; }\n");
 
@@ -232,7 +236,6 @@ bool SaveHTML(const Script::Script& script, const QString& fileName, const QStri
 
     QTextStream out(&fout);
     out.setCodec( QTextCodec::codecForName("UTF-8") );
-    out.setGenerateByteOrderMark(true);
     out << html;
 
     fout.close();

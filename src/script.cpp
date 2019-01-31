@@ -34,7 +34,7 @@ uint StrToTime(const QString& str, const ScriptType type)
          min  = 0,
          sec  = 0,
          msec = 0;
-    QStringList list = str.split(QChar(':'));
+    QStringList list = str.split(':');
 
     // Часы
     if (!list.isEmpty())
@@ -52,8 +52,8 @@ uint StrToTime(const QString& str, const ScriptType type)
 
     if (!list.isEmpty())
     {
-        if (SCR_ASS == type || SCR_SSA == type) list = list.first().split(QChar('.'));
-        else list = list.first().split(QChar(','));
+        if (SCR_ASS == type || SCR_SSA == type) list = list.first().split('.');
+        else list = list.first().split(',');
 
         // Секунды
         if (!list.isEmpty())
@@ -257,7 +257,7 @@ QString Style::generate(const ScriptType type) const
 
         list.append( QString::number(encoding) );
 
-        result = Named::generate(type, list.join(QChar(',')));
+        result = Named::generate(type, list.join(','));
     }
 
     return result;
@@ -314,7 +314,7 @@ QString Event::generate(const ScriptType type) const
         list.append(effect);
         list.append(text);
 
-        result = Named::generate(type, list.join(QChar(',')));
+        result = Named::generate(type, list.join(','));
     }
     else if (SCR_SRT == type)
     {
@@ -447,28 +447,30 @@ bool ParseSSA(QTextStream& in, Script& script)
     QRegularExpressionMatch match;
 
     // Таблица состояний
-    QHash<QString, SectionType> sectionTable;
-    sectionTable[Sections::header.toLower()]    = SEC_HEADER;
-    sectionTable[Sections::stylesSSA.toLower()] = SEC_STYLES;
-    sectionTable[Sections::stylesASS.toLower()] = SEC_STYLES;
-    sectionTable[Sections::events.toLower()]    = SEC_EVENTS;
-    sectionTable[Sections::fonts.toLower()]     = SEC_FONTS;
-    sectionTable[Sections::graphics.toLower()]  = SEC_GRAPHICS;
+    QHash<QString, SectionType> sectionTable = {
+        {Sections::header.toLower(),    SEC_HEADER},
+        {Sections::stylesSSA.toLower(), SEC_STYLES},
+        {Sections::stylesASS.toLower(), SEC_STYLES},
+        {Sections::events.toLower(),    SEC_EVENTS},
+        {Sections::fonts.toLower(),     SEC_FONTS},
+        {Sections::graphics.toLower(),  SEC_GRAPHICS}
+    };
 
     // Таблица типов файлов
-    QHash<QString, ScriptType> typeTable;
-    typeTable[QString("v4.00").toLower()]  = typeTable[Sections::stylesSSA.toLower()] = SCR_SSA;
-    typeTable[QString("v4.00+").toLower()] = typeTable[Sections::stylesASS.toLower()] = SCR_ASS;
+    QHash<QString, ScriptType> typeTable = {
+        {"v4.00",  SCR_SSA},
+        {"v4.00+", SCR_ASS},
+        {Sections::stylesSSA.toLower(), SCR_SSA},
+        {Sections::stylesASS.toLower(), SCR_ASS}
+    };
 
     // Имена строк
-    const QString ltStyle      = QString("Style").toLower();
-    const QString ltEvent      = QString("Dialogue").toLower();
-    const QString ltFormat     = QString("Format").toLower();
-    const QString ltScriptType = QString("ScriptType").toLower();
+    const QString ltStyle      = "style";
+    const QString ltEvent      = "dialogue";
+    const QString ltFormat     = "format";
+    const QString ltScriptType = "scripttype";
 
     QString line, name, text, tempStr;
-    QHash<QString, SectionType>::iterator st_it;
-    QHash<QString, ScriptType>::iterator tp_it;
     SectionType state = SEC_UNKNOWN;
     QStringList tempStrList, tempList;
     bool readNext = true, atBegin = true;
@@ -499,16 +501,14 @@ bool ParseSSA(QTextStream& in, Script& script)
                 tempStr = match.captured(1).trimmed().toLower();
 
                 // Есть ли такой заголовок в таблице?
-                st_it = sectionTable.find(tempStr);
-                if (sectionTable.end() != st_it)
+                if (sectionTable.contains(tempStr))
                 {
-                    state = st_it.value();
+                    state = sectionTable[tempStr];
 
                     // Заголовок с версией файла?
-                    tp_it = typeTable.find(tempStr);
-                    if (typeTable.end() != tp_it)
+                    if (typeTable.contains(tempStr))
                     {
-                        type = tp_it.value();
+                        type = typeTable[tempStr];
                     }
 
                     // В начале файла
@@ -531,7 +531,7 @@ bool ParseSSA(QTextStream& in, Script& script)
 
         case SEC_HEADER:
             // Такой комментарий может быть только в заголовке
-            if ( line.startsWith(QChar(';')) )
+            if ( line.startsWith(';') )
             {
                 tempStrList.append(line);
             }
@@ -545,7 +545,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                 state = SEC_UNKNOWN;
             }
             // Нормальная строка
-            else if ( -1 != ( pos = line.indexOf(QChar(':')) ) )
+            else if ( -1 != ( pos = line.indexOf(':') ) )
             {
                 name = line.left(pos).trimmed();
                 text = line.mid(pos + 1).trimmed();
@@ -553,10 +553,10 @@ bool ParseSSA(QTextStream& in, Script& script)
                 // Версия файла (шо, опять?)
                 if (ltScriptType == name.toLower())
                 {
-                    tp_it = typeTable.find( text.toLower() );
-                    if (typeTable.end() != tp_it)
+                    tempStr = text.toLower();
+                    if (typeTable.contains(tempStr))
                     {
-                        type = tp_it.value();
+                        type = typeTable[tempStr];
                     }
                 }
                 else
@@ -586,7 +586,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                 state = SEC_UNKNOWN;
             }
             // Нормальная строка
-            else if ( -1 != ( pos = line.indexOf(QChar(':')) ) )
+            else if ( -1 != ( pos = line.indexOf(':') ) )
             {
                 name = line.left(pos).trimmed();
                 text = line.mid(pos + 1).trimmed();
@@ -598,7 +598,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                     Line::Style* ptr = new Line::Style(tempStrList);
                     tempStrList.clear();
 
-                    tempList = text.split(QChar(','));
+                    tempList = text.split(',');
 
                     // Пытаемся спасти большую часть строки
                     // Name
@@ -840,7 +840,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                 state = SEC_UNKNOWN;
             }
             // Нормальная строка
-            else if ( -1 != ( pos = line.indexOf(QChar(':')) ) )
+            else if ( -1 != ( pos = line.indexOf(':') ) )
             {
                 name = line.left(pos).trimmed();
                 text = line.mid(pos + 1).trimmed();
@@ -852,7 +852,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                     Line::Event* ptr = new Line::Event(tempStrList);
                     tempStrList.clear();
 
-                    tempList = text.split(QChar(','));
+                    tempList = text.split(',');
 
                     // Пытаемся спасти большую часть строки
                     // Layer
@@ -921,7 +921,7 @@ bool ParseSSA(QTextStream& in, Script& script)
                     // Text
                     if (!tempList.isEmpty())
                     {
-                        ptr->text = tempList.join(QChar(','));
+                        ptr->text = tempList.join(',');
                     }
 
                     script.events.append(ptr);
