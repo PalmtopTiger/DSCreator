@@ -147,7 +147,8 @@ void MainWindow::on_btSaveHTML_clicked()
                           actors,
                           ui->edFPS->value(),
                           this->getTimeStart(),
-                          ui->edJoinInterval->time().msecsSinceStartOfDay()))
+                          ui->edJoinInterval->time().msecsSinceStartOfDay(),
+                          _fileInfo.completeBaseName()))
     {
         QMessageBox::critical(this, "Ошибка", "Ошибка сохранения файла");
     }

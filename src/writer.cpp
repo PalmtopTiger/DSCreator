@@ -206,11 +206,12 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
     document.print(&printer);
 }*/
 
-bool SaveHTML(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval)
+bool SaveHTML(const Script::Script& script, const QString& fileName, const QStringList& actors, const double fps, const int timeStart, const int joinInterval, const QString& title)
 {
     const PhraseList phrases = PreparePhrases(script, actors, joinInterval);
 
     QTextDocument document;
+    document.setMetaInformation(QTextDocument::DocumentTitle, title);
     QFont font = document.defaultFont();
     font.setStyleHint(QFont::SansSerif);
     font.setFamily("Arial");
