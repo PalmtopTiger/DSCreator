@@ -51,7 +51,7 @@ QString TimeToPT(const uint time, const double fps, const int timeStart)
     // Собираем строку (последний компонент - кадры)
     const QChar fillChar = '0';
     return QString("%1%2:%3:%4:%5")
-            .arg(negative ? QString("−") : QString::null)
+            .arg(negative ? QString("−") : QString())
             .arg(hour, 2, 10, fillChar)
             .arg(min,  2, 10, fillChar)
             .arg(sec,  2, 10, fillChar)
@@ -70,7 +70,7 @@ PhraseList PreparePhrases(const Script::Script& script, const QStringList& actor
     for (const Script::Line::Event* const event : qAsConst(script.events.content))
     {
         actor = event->actorName.isEmpty() ? ACTOR_EMPTY : event->actorName; // Already trimmed
-        text  = event->text.trimmed().replace("\\N", " ", Qt::CaseInsensitive).replace(assTags, QString::null);
+        text  = event->text.trimmed().replace("\\N", " ", Qt::CaseInsensitive).replace(assTags, QString());
 
         // Если интервал указан, фраза не первая, актёр совпадает и расстояние между фразами не более 5 сек.
         if (!first &&
@@ -130,7 +130,7 @@ bool SaveSV(const Script::Script& script, const QString& fileName, const QString
         {
             line.append( TimeToPT(phrase.start, fps, timeStart) );
             line.append( TimeToPT(phrase.end, fps, timeStart) );
-            line.append( phrase.actor != prevActor ? phrase.actor : QString::null );
+            line.append( phrase.actor != prevActor ? phrase.actor : QString() );
             line.append( phrase.text );
         }
         else if (separator == SEP_TSV)

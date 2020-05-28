@@ -19,7 +19,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "writer.h"
-#include <QDesktopWidget>
+#include <QStyle>
+#include <QScreen>
 #include <QDragEnterEvent>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -49,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->edTimeStart->setTime(QTime::fromMSecsSinceStartOfDay(abs(timeStart)));
     ui->edJoinInterval->setTime(QTime::fromMSecsSinceStartOfDay(_settings.value(JOIN_INTERVAL_KEY, ui->edJoinInterval->time().msecsSinceStartOfDay()).toInt()));
 
-    this->move(QApplication::desktop()->screenGeometry().center() - this->rect().center());
+    this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, this->size(), qApp->primaryScreen()->availableGeometry()));
 }
 
 MainWindow::~MainWindow()
@@ -172,7 +173,7 @@ QString UrlToPath(const QUrl &url)
             return path;
         }
     }
-    return QString::null;
+    return QString();
 }
 
 void MainWindow::updateActors()
